@@ -1,0 +1,10 @@
+tools/*.gz
+tools/*.bz2
+tools/*.asc
+tools/*.sig
+*.o
+*.a
+*.bin
+*.img
+*.iso
+.*.swp
