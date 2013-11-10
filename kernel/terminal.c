@@ -1,5 +1,6 @@
 #include <kernel/terminal.h>
 #include <kernel/string.h>
+#include <arch/layout.h>
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 24;
@@ -26,7 +27,7 @@ void terminal_initialize(void)
 	terminal_row = 0;
 	terminal_column = 0;
 	terminal_color = make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
-	terminal_buffer = (uint16_t*) 0xB8000;
+	terminal_buffer = (uint16_t*) (0xB8000 + &KERNEL_VMA);
 	for ( size_t y = 0; y < VGA_HEIGHT; y++ )
 	{
 		for ( size_t x = 0; x < VGA_WIDTH; x++ )

@@ -88,6 +88,7 @@ _start_lower_half:
 	#movl %ecx, %cr4
 
 	popl %ebx
+	addl $KERNEL_VMA, %ebx
 	popl %eax
 
 	movl %cr0, %ecx
@@ -100,9 +101,17 @@ _start_lower_half:
 .global _start_higher_half
 .type _start_higher_half, @function
 _start_higher_half:
-	#movl $0, (boot_page_directory)
-	#invlpg (0)
+	movl $0, (boot_page_directory)
 
+	# invalidate all the pages in the first pd_entry
+	movl $1024, %ecx
+.invl_tlb:
+	movl $0, %edx
+	invlpg (%edx)
+	addl $4096, %edx
+	decl %ecx
+	jnz .invl_tlb
+	
 	movl $stack_top, %esp
 
 	# push multiboot magic number and info pointer

@@ -9,6 +9,8 @@
 #include <kernel/kprintf.h>
  
 /*
+ * addr is the address of the multiboot info structure
+ * TODO: multiboot info is in our address space, but currently none of the pointers under it are
  */
 void kernel_main(unsigned long magic, uintptr_t addr)
 {

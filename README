@@ -9,6 +9,14 @@ All other files, see the license in this directory.
 For compiling, start by creating a cross compiler.
 See tools/toolchain.sh
 
+Current problems:
+the C code is not position independent, so it's not possible to
+use it in boot.S before paging is set up.
+multiboot structures use physical addresses. remember to add
+KERNEL_VMA to everything before accessing pointers.
+need to find a prettier way of accessing mapped memory
+e.g. everything ends up having KERNEL_VMA added to it
+
 Initial goals:
 boot from grub or syslinux on a 32 bit intel arch inside qemu.
 implement basic virtual memory management.
