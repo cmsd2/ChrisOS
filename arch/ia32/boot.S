@@ -16,10 +16,16 @@
 .section .data
 .align 4096
 boot_page_directory:
-	.int 0x83 # 4MB rw present
+	.int 0x03 # rw present
 	.fill (KERNEL_PAGE_NUMBER - 1), 4, 0
-	.int 0x83 # 4MB rw present
+boot_high_pd_entry:
+	.int 0x03 # rw present
 	.fill (1024 - KERNEL_PAGE_NUMBER - 1), 4, 0
+
+# already aligned
+boot_page_table:
+	.fill 1024, 4, 0
+	
 
 # Declare a header as in the Multiboot Standard. We put this into a special
 # section so we can force the header to be in the start of the final program.
@@ -50,12 +56,39 @@ stack_top:
 
 .global _start_lower_half
 _start_lower_half:
+	movl $(stack_top - KERNEL_VMA), %esp
+	pushl %eax
+	pushl %ebx
+
+	# set pd frame addresses to that of boot_page_table
+	movl $(boot_high_pd_entry - KERNEL_VMA), %ecx
+	movl $(boot_page_table - KERNEL_VMA), %edx
+	orl $0x3, %edx
+	movl %edx, 0(%ecx)
+	movl $(boot_page_directory - KERNEL_VMA), %ecx
+	movl %edx, 0(%ecx)
+
+	# fill boot_page_table
+	movl $(boot_page_table - KERNEL_VMA), %ebx
+	movl $1024, %ecx # loop start
+	movl $0x3, %eax # page address with flags
+
+.fill_pt:
+	movl %eax, 0(%ebx)
+	addl $4096, %eax
+	addl $4, %ebx
+	decl %ecx
+	jnz .fill_pt
+	
 	movl $(boot_page_directory - KERNEL_VMA), %ecx
 	movl %ecx, %cr3
 
-	movl %cr4, %ecx
-	orl  $0x10, %ecx
-	movl %ecx, %cr4
+	#movl %cr4, %ecx
+	#orl  $0x10, %ecx
+	#movl %ecx, %cr4
+
+	popl %ebx
+	popl %eax
 
 	movl %cr0, %ecx
 	movl $0x80000000, %ecx
