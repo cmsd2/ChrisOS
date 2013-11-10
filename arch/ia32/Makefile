@@ -1,6 +1,7 @@
 libs = $(addprefix ../../, $(MODULES))
+objs = boot.o paging.o
 
-INCLUDES = -I../../include
+INCLUDES = -I../../include -I./include
 ASFLAGS += $(INCLUDES)
 CFLAGS += $(INCLUDES)
 
@@ -8,7 +9,7 @@ CFLAGS += $(INCLUDES)
 
 all: kernel.bin
 
-kernel.bin: boot.o $(libs)
+kernel.bin: $(objs) $(libs) link.ld
 	$(CC) $(CFLAGS) -T link.ld -o $@ $^ -nostdlib -lgcc
 
 clean:

@@ -1,0 +1,3 @@
+void panic(void) {
+	/*todo...*/
+}

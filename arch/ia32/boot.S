@@ -10,6 +10,9 @@
 .set KERNEL_VMA, 0xc0000000      # 3GB
 .set KERNEL_PAGE_NUMBER, (KERNEL_VMA >> 22)
 
+# map 1st 4MB of memory to itself,
+# and also to where the higher half will run
+# later will unmap 1st 4MB
 .section .data
 .align 4096
 boot_page_directory:
@@ -38,6 +41,8 @@ stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
 
+# loaded physically at KERNEL_LMA
+# linked as if running at KERNEL_VMA
 .section .text
 
 .set _start, (_start_lower_half - KERNEL_VMA)
@@ -67,8 +72,9 @@ _start_higher_half:
 
 	movl $stack_top, %esp
 
-	pushl %eax
+	# push multiboot magic number and info pointer
 	pushl %ebx
+	pushl %eax
 
 	call kernel_main
 

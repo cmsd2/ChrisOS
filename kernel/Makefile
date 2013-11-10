@@ -1,5 +1,7 @@
 
-objs += main.o
+objs += main.o frame_alloc.o mem.o panic.o layout.o string.o terminal.o
+
+CFLAGS += -I../include -I../arch/$(ARCH)/include
 
 .PHONY: clean
 

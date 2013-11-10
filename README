@@ -1,0 +1,24 @@
+ChrisOS
+
+Because like logging frameworks for java, we need more hobby OSs.
+
+Some files have been copied from other sources e.g. grub's multiboot.h.
+In this case, the copyright info is inside the copied file.
+All other files, see the license in this directory.
+
+For compiling, start by creating a cross compiler.
+See tools/toolchain.sh
+
+Initial goals:
+boot from grub or syslinux on a 32 bit intel arch inside qemu.
+implement basic virtual memory management.
+display stuff on the screen.
+
+Later goals:
+Evaluate micro or monolithic designs.
+Load programs from disk and run them.
+
+Much later goals:
+port a libc for userspace
+investigate porting drivers from BSD or linux or minix
+
