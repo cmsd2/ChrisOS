@@ -1,0 +1,12 @@
+#ifndef KERNEL_KPRINTF_H
+#define KERNEL_KPRINTF_H
+
+#include <stdarg.h>
+
+void putchar(int c, void *arg);
+void kprintf(const char *fmt, ...);
+char * ksprintn(char *nbuf, uintmax_t num, int base, int *lenp, int upper);
+int kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_list ap);
+
+
+#endif
