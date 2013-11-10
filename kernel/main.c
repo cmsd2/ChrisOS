@@ -16,7 +16,7 @@ void kernel_main(unsigned long magic, uintptr_t addr)
 
 	terminal_initialize();
 
-	paging_identity_map_kernel();
+	//paging_identity_map_kernel();
 
 	//paging_enable();
 
