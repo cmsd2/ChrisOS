@@ -1,5 +1,5 @@
 libs = $(addprefix ../../, $(MODULES))
-objs = boot.o paging.o
+objs = boot.o paging.o gdt.o interrupts.o isrs.o idt.o
 
 INCLUDES = -I../../include -I./include
 ASFLAGS += $(INCLUDES)

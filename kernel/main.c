@@ -3,43 +3,32 @@
 #include <stdint.h>
 
 #include <arch/multiboot.h>
+#include <kernel/multiboot.h>
 #include <kernel/layout.h>
 #include <arch/paging.h>
+#include <arch/gdt.h> //TODO: this is too arch specific
+#include <arch/interrupts.h>
 #include <kernel/terminal.h>
 #include <kernel/kprintf.h>
  
-/*
- * addr is the address of the multiboot info structure
- * TODO: multiboot info is in our address space, but currently none of the pointers under it are
- */
-void kernel_main(unsigned long magic, uintptr_t addr)
+void kmain()
 {
-	multiboot_info_t *multiboot_info;
-
-	layout_init();
-
-	// paging is already enabled
-	// this is a replacement set of tables
-	paging_init();
-
 	terminal_initialize();
+	load_multiboot_info();
+	layout_init();
+	kprintf("kernel start: 0x%x\n", _kernel_layout.segment_start);
+	kprintf("kernel mem start: 0x%x\n", _kernel_layout.memory_start);
+	kprintf("kernel mem end: 0x%x\n", _kernel_layout.memory_end);
 
-	paging_identity_map_kernel();
+	paging_init();
+	gdt_install();
+	interrupts_init();
 
-	//paging_enable();
+	interrupts_enable();
 
-	if(magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-		kprintf("Invalid multiboot magic number\n");
-		return;
-	}
-
-	multiboot_info = (multiboot_info_t*)addr;
-
-	if(multiboot_info->flags & MULTIBOOT_INFO_MEMORY) {
-		kprintf("found multiboot memory info\n");
-	}
-	/* Since there is no support for newlines in terminal_putchar yet, \n will
-	   produce some VGA specific character instead. This is normal. */
-	kprintf("Hello, kernel World!\n");
-
+	// check interrupts work
+	__asm__("int $0x3");
+	__asm__("int $0x4");
+ 
+	kprintf("Hello, kernel world!\n");
 }

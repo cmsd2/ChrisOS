@@ -22,7 +22,7 @@ enum PAGE_PDE_FLAGS {
 	I86_PDE_4MB			=	0x80,		//0000000000000000000000010000000
 	I86_PDE_CPU_GLOBAL		=	0x100,		//0000000000000000000000100000000
 	I86_PDE_LV4_GLOBAL		=	0x200,		//0000000000000000000001000000000
-   	I86_PDE_FRAME			=	0x7FFFF000 	//1111111111111111111000000000000
+   	I86_PDE_FRAME			=	0xFFFFF000 	//1111111111111111111000000000000
 };
 
 enum PAGE_PTE_FLAGS {
@@ -37,7 +37,7 @@ enum PAGE_PTE_FLAGS {
 	I86_PTE_PAT			=	0x80,		//0000000000000000000000010000000
 	I86_PTE_CPU_GLOBAL		=	0x100,		//0000000000000000000000100000000
 	I86_PTE_LV4_GLOBAL		=	0x200,		//0000000000000000000001000000000
-   	I86_PTE_FRAME			=	0x7FFFF000 	//1111111111111111111000000000000
+   	I86_PTE_FRAME			=	0xFFFFF000 	//1111111111111111111000000000000
 };
 
 typedef uintptr_t pt_entry;
@@ -76,14 +76,16 @@ uintptr_t paging_pd_entry_get_frame(pd_entry *e);
 
 void paging_enable(void);
 void paging_init(void);
-void paging_init_pd(void);
+void paging_init_kernel_page_dir(void);
+void paging_load_page_dir(struct page_directory *pd);
 void paging_init_pts(void);
-void paging_pt_map(struct page_table * pt, uintptr_t base_addr, uint32_t flags);
-struct page_table * paging_new_pt_map(uintptr_t base_addr, uint32_t flags);
-void paging_identity_map(uintptr_t base_addr, size_t size);
-void paging_identity_map_kernel();
-size_t paging_pd_id_for_addr(uintptr_t addr);
-pd_entry * paging_pd_for_addr(uintptr_t addr);
+void paging_pt_map(struct page_table * pt, uintptr_t base_addr, int pages, uint32_t flags);
+struct page_table * paging_alloc_static_pt(void);
+void paging_identity_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, uint32_t flags);
+void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, uintptr_t vaddr, uint32_t flags);
+void paging_map_kernel(struct page_directory * ptd);
+size_t paging_pd_entry_id_for_addr(uintptr_t addr);
+pd_entry * paging_pd_entry_for_addr(struct page_directory *pd, uintptr_t addr);
 void paging_pd_install_pt(pd_entry * pd, struct page_table * pt, uint32_t flags);
 
 

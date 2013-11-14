@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 struct layout {
+	uintptr_t segment_start;
 	uintptr_t memory_start;
 	uintptr_t memory_end;
 };
@@ -12,5 +13,7 @@ struct layout {
 extern struct layout _kernel_layout;
 
 void layout_init(void);
+
+uintptr_t physical_address(uintptr_t kernel_address);
 
 #endif

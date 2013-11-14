@@ -1,6 +1,8 @@
-#from osdev.org bare bones. believed public domain.
+# based on code from osdev.org
 
-# Declare constants used for creating a multiboot header.
+.section .text
+
+# Multiboot constants
 .set ALIGN,    1<<0             # align loaded modules on page boundaries
 .set MEMINFO,  1<<1             # provide memory map
 .set FLAGS,    ALIGN | MEMINFO  # this is the Multiboot 'flag' field
@@ -10,122 +12,102 @@
 .set KERNEL_VMA, 0xc0000000      # 3GB
 .set KERNEL_PAGE_NUMBER, (KERNEL_VMA >> 22)
 
-# map 1st 4MB of memory to itself,
-# and also to where the higher half will run
-# later will unmap 1st 4MB
-.section .data
-.align 4096
-boot_page_directory:
-	.int 0x03 # rw present
-	.fill (KERNEL_PAGE_NUMBER - 1), 4, 0
-boot_high_pd_entry:
-	.int 0x03 # rw present
-	.fill (1024 - KERNEL_PAGE_NUMBER - 1), 4, 0
+# this section is linked in the high half,
+# which isn't ideal, but we adjust the addresses and cope.
+.section .setup
+trickgdt:
+	.short (gdt_end - gdt - 1) # size-1 of the GDT
+	.int (gdt - KERNEL_VMA) # physical address of GDT
+ 
+.align 8
+gdt:
+	# 3 entries, each 8 bytes long:
 
-# already aligned
-boot_page_table:
-	.fill 1024, 4, 0
-	
+	# null gate:
+	.int 0, 0
 
-# Declare a header as in the Multiboot Standard. We put this into a special
-# section so we can force the header to be in the start of the final program.
-# You don't need to understand all these details as it is just magic values that
-# is documented in the multiboot standard. The bootloader will search for this
-# magic sequence and recognize us as a multiboot kernel.
+	# code selector 0x08: base 0x40000000, limit 0xFFFFFFFF, 
+	# type 0x9A, granularity 0xCF
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0x40
+
+	# data selector 0x10: base 0x40000000, limit 0xFFFFFFFF, 
+	# type 0x92, granularity 0xCF
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0x40
+
+	# ring 3 entries
+	#.byte 0xFF, 0xFF, 0, 0, 0, 0xFA, 0xCF, 0x40
+	#.byte 0xFF, 0xFF, 0, 0, 0, 0xF2, 0xCF, 0x40
+gdt_end:
+ 
+
 .section .multiboot
 .align 4
 .long MAGIC
 .long FLAGS
 .long CHECKSUM
 
-# Currently the stack pointer register (esp) points at anything and using it may
-# cause massive harm. Instead, we'll provide our own stack. We will allocate
-# room for a small temporary stack by creating a symbol at the bottom of it,
-# then allocating 16384 bytes for it, and finally creating a symbol at the top.
 .section .bootstrap_stack
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
 
-# loaded physically at KERNEL_LMA
-# linked as if running at KERNEL_VMA
 .section .text
+.globl _start
+_start:
+	# TODO: is this necessary or wise?
+	cli
 
-.set _start, (_start_lower_half - KERNEL_VMA)
-.global _start
+	# save multiboot info
+	movl %eax, (_magic - KERNEL_VMA)
+	movl %ebx, (_multiboot_info - KERNEL_VMA)
 
-.global _start_lower_half
-_start_lower_half:
-	movl $(stack_top - KERNEL_VMA), %esp
-	pushl %eax
-	pushl %ebx
+	# here's the trick: we load a GDT with a base address
+	# of 0x40000000 for the code (0x08) and data (0x10) segments
+	mov $trickgdt, %ebx
+	subl $KERNEL_VMA, %ebx
+	lgdt (%ebx)
 
-	# set pd frame addresses to that of boot_page_table
-	movl $(boot_high_pd_entry - KERNEL_VMA), %ecx
-	movl $(boot_page_table - KERNEL_VMA), %edx
-	orl $0x3, %edx
-	movl %edx, 0(%ecx)
-	movl $(boot_page_directory - KERNEL_VMA), %ecx
-	movl %edx, 0(%ecx)
-
-	# fill boot_page_table
-	movl $(boot_page_table - KERNEL_VMA), %ebx
-	movl $1024, %ecx # loop start
-	movl $0x3, %eax # page address with flags
-
-.fill_pt:
-	movl %eax, 0(%ebx)
-	addl $4096, %eax
-	addl $4, %ebx
-	decl %ecx
-	jnz .fill_pt
-	
-	movl $(boot_page_directory - KERNEL_VMA), %ecx
-	movl %ecx, %cr3
-
-	#movl %cr4, %ecx
-	#orl  $0x10, %ecx
-	#movl %ecx, %cr4
-
-	popl %ebx
-	addl $KERNEL_VMA, %ebx
-	popl %eax
-
-	movl %cr0, %ecx
-	movl $0x80000000, %ecx
-	movl %ecx, %cr0
-
-	movl $_start_higher_half, %ecx
-	jmp *%ecx
-
-.global _start_higher_half
-.type _start_higher_half, @function
+	jmp $0x08, $_start_higher_half
 _start_higher_half:
-	movl $0, (boot_page_directory)
 
-	# invalidate all the pages in the first pd_entry
-	movl $1024, %ecx
-.invl_tlb:
-	movl $0, %edx
-	invlpg (%edx)
-	addl $4096, %edx
-	decl %ecx
-	jnz .invl_tlb
-	
-	movl $stack_top, %esp
+	mov $0x10, %ax
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
+	mov %ax, %ss
+ 
+	# from now the CPU will translate automatically every address
+	# by adding the base 0x40000000
+	# for our high base address of 3GB, this wraps around to 0x0
 
-	# push multiboot magic number and info pointer
-	pushl %ebx
-	pushl %eax
-
-	call kernel_main
-
+	mov $stack_top, %esp
+ 
+	call kmain
+ 
 	cli
 	hlt
 .Lhang:
 	jmp .Lhang
+ 
+# this function does the same thing of the 'start' one, this time with
+# the real GDT
+.globl gdt_flush
+gdt_flush:
+	lgdt (gp)
+	movw $0x10, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
+	movw %ax, %ss
 
-# Set the size of the _start symbol to the current location '.' minus its start.
-# This is useful when debugging or when you implement call tracing.
-.size _start_higher_half, . - _start_higher_half
+	jmp $0x08, $flush2
+ 
+flush2:
+	ret
+ 
+
+.section .bss
+ 
 

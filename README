@@ -2,31 +2,107 @@ ChrisOS
 
 Because like logging frameworks for java, we need more hobby OSs.
 
-Some files have been copied from other sources e.g. grub's multiboot.h.
-In this case, the copyright info is inside the copied file.
-All other files, see the license in this directory.
+
+Licensing:
+
+Some files have been copied from other sources:
+
+kprintf.c is derived from BSD
+
+multiboot.h and multiboot2.h are from grub.
+
+boot.S is inspired by examples available on osdev.org. The intention is that
+code on that site is in the public domain, but the actual provenance of
+each example is harder to determine.
+
+GDT, IDT and interrupts code is based on examples from James Molloy
+at www.jamesmolloy.co.uk and is openly licensed in this forum post:
+http://forum.osdev.org/viewtopic.php?p=201752#p201752
+basically: ownership retained, all other rights waived, but with a disclaimer.
+
+toolchain.sh is based on the one from HelenOS.
+
+In each case, any required copyright info is inside the file.
+All other files are my own work, see the license in this directory.
+
+
+Getting Started:
 
 For compiling, start by creating a cross compiler.
 See tools/toolchain.sh
 
 Current problems:
 the C code is not position independent, so it's not possible to
-use it in boot.S before paging is set up.
-multiboot structures use physical addresses. remember to add
-KERNEL_VMA to everything before accessing pointers.
+use it in boot.S before paging is set up if it's linked assuming
+high virtual memory addresses.
+solution seems to be to transition to using linear addresses asap,
+initially with just the GDT, then with paging taking over.
+
+before getting the GDT working, I had tried splitting the C code
+into two parts -- one for low virtual addresses 
+and one for high ones, but I can't seem to
+access the low parts. is the runtime elf loader doing something weird?
+have i misunderstood how the linker works?
+could use objcopy to duplicate C code so it's available both pre
+and post jump if we can rely on the runtime loading.
+
+multiboot structures use physical addresses. 
+remember to add KERNEL_VMA to everything before accessing pointers.
 need to find a prettier way of accessing mapped memory
 e.g. everything ends up having KERNEL_VMA added to it
 
-Initial goals:
-boot from grub or syslinux on a 32 bit intel arch inside qemu.
-implement basic virtual memory management.
-display stuff on the screen.
 
-Later goals:
+Features:
+boot from syslinux and also directly from qemu (with -kernel) on ia32
+jump to higher half
+handle interrupts
+printf to 80x24 vga screen
+
+Wishlist:
+
+Next:
+paging
+basic virtual memory management
+get keyboard input
+framebuffer
+
+Later:
 Evaluate micro or monolithic designs.
-Load programs from disk and run them.
+process control blocks
+fat16
+vfs?
+scheduler
+userspace
+syscalls
+serial console
 
-Much later goals:
+Much later:
+plug and play
+acpi?
+usb?
+lots of possibilities
+
+Much Much later and in no particular order:
+reentrancy: nested interrupt service routines
+threads
+multiprocessor support
 port a libc for userspace
-investigate porting drivers from BSD or linux or minix
+investigate porting drivers from BSD or minix
+port to amd64
+networking stack
+shell
+dtrace
+
+Memory Layout:
+initial boot:
+loaded as one blob as per linker script at 1MB physical address
+immediately loads boot gdt tables to remap first 4MB to 3G linear address
+this captures both bios area and kernel
+
+paging and proper gdt:
+setup the ptd with just two pt entries filled in
+one for first 4MB region and one for the single table starting at 3G
+load gdt with cs and ds ring0 entries starting at linear address 0,
+replacing hacky ones which started at 3G
+
 

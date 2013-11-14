@@ -13,12 +13,9 @@ all:
 
 iso: boot.iso
 
-boot.bin: boot.asm
-	nasm -f bin -o boot.bin boot.asm
-
-boot.img: boot.bin
+boot.img: arch/$(ARCH)/kernel.bin
 	dd if=/dev/zero of=boot.img count=1440 bs=1024
-	dd conv=notrunc if=boot.bin of=boot.img
+	dd conv=notrunc if=arch/$(ARCH)/kernel.bin of=boot.img
 
 boot.iso: iso/boot/isolinux/isolinux.cfg
 	cp arch/$(ARCH)/kernel.bin iso/boot/kernel.bin
