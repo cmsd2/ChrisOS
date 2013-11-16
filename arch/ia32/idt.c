@@ -42,5 +42,5 @@ void idt_zero_entry(struct idt_entry *entry) {
 	entry->_unused = 0;
 	entry->flags = 0;
 	entry->offset_high = 0;
-};
+}
 

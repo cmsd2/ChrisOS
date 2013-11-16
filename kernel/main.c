@@ -10,6 +10,9 @@
 #include <arch/interrupts.h>
 #include <kernel/terminal.h>
 #include <kernel/kprintf.h>
+#include <utlist.h>
+#include <assert.h>
+#include <arch/cpuid.h>
  
 void kmain()
 {
@@ -31,4 +34,8 @@ void kmain()
 	__asm__("int $0x4");
  
 	kprintf("Hello, kernel world!\n");
+
+	assert(cpuid_available());
+
+	kprintf("cpu is %s\n", cpuid_vendor_string(cpuid_vendor()));
 }
