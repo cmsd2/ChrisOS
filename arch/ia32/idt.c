@@ -29,10 +29,6 @@ void idt_flush_table(uint32_t __idt_header) {
 }
 
 void idt_set_gate(uint8_t i, uint32_t offset, uint16_t selector, uint8_t flags) {
-	if(i < 0 || i >= IDT_ENTRIES) {
-		panic("idt gate out of range");
-	}
-
 	_idt_entries[i].offset_low = offset & 0xFFFF;
 	_idt_entries[i].offset_high = offset >> 16;
 	_idt_entries[i].selector = selector;

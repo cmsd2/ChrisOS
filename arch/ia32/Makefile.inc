@@ -1,5 +1,6 @@
 export TARGET=i686-pc-elf
-export CFLAGS=-ffreestanding \
+export CFLAGS:=$(CFLAGS) \
+	-ffreestanding \
 	-std=c99 \
 	-mno-mmx \
 	-mno-sse \

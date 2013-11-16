@@ -6,7 +6,7 @@ CFLAGS += -I../include -I../arch/$(ARCH)/include
 .PHONY: clean
 
 kernel.a: $(objs)
-	$(AR) -rs $@ $^
+	$(AR) -rT $@ $^
 
 clean:
 	$(RM) -f kernel.a $(objs)

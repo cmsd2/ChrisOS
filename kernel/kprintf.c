@@ -419,7 +419,7 @@ number:
 #undef PCHAR
 }
 
-void putchar(int c, void *arg) {
+void putchar(int c, void * arg __attribute__ ((unused)) ) {
 	terminal_putchar((char)c);
 }
 
