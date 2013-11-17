@@ -7,6 +7,8 @@
 #include <kernel/layout.h>
 #include <arch/paging.h>
 #include <arch/gdt.h> //TODO: this is too arch specific
+#include <arch/apic.h>
+#include <arch/msrs.h>
 #include <arch/interrupts.h>
 #include <kernel/terminal.h>
 #include <kernel/kprintf.h>
@@ -36,6 +38,13 @@ void kmain()
 	kprintf("Hello, kernel world!\n");
 
 	assert(cpuid_available());
+	assert(msrs_available());
 
 	kprintf("cpu is %s\n", cpuid_vendor_string(cpuid_vendor()));
+
+	struct cpuid_info cpu;
+	cpuid_read_info(&cpu);
+	cpuid_print_info(&cpu);
+
+	apic_init(&cpu);
 }
