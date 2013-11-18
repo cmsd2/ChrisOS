@@ -65,13 +65,34 @@ struct apic_base_msr {
 	} high;
 };
 
+struct apic_sivr {
+	union {
+		unsigned int value;
+		struct {
+			unsigned int spurious_vector : 8;
+			unsigned int software_enable : 1;
+			unsigned int focus_proc_checking : 1;
+			unsigned int reserved_10_11 : 2;
+			unsigned int eoi_broadcast_supress : 1;
+			unsigned int reserved_13_31 : 19;
+		} fields;
+	} sivr;
+};
+
 void apic_init(const struct cpuid_info * cpu);
 bool apic_available(const struct cpuid_info * cpu);
 void apic_print_base_msr(const struct apic_base_msr * msr);
 uint8_t apic_current_cpu_apic_id(void);
 void apic_read_msr(const struct cpuid_info * cpu, struct apic_base_msr * msr);
 void apic_write_msr(const struct apic_base_msr * msr);
-void apic_get_base(const struct apic_base_msr * msr, uint32_t * low, uint32_t * high);
+void apic_get_base(const struct apic_base_msr * msr, unsigned int * low, unsigned int * high);
 void apic_set_base(struct apic_base_msr * msr, uint32_t low, uint32_t high);
+void apic_global_enable(const struct cpuid_info * cpu, struct apic_base_msr * msr);
+uintptr_t apic_phys_to_linear_addr(unsigned int low, unsigned int high);
+void apic_read_reg_32(const struct apic_base_msr * msr, unsigned int reg, unsigned int * value);
+void apic_write_reg_32(const struct apic_base_msr * msr, unsigned int reg, unsigned int value);
+void apic_sivr_enable(const struct apic_base_msr * msr);
+void apic_sivr_disable(const struct apic_base_msr * msr);
+
 
 #endif

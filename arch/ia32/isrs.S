@@ -11,12 +11,15 @@ isr ## N : ; \
 #define ISR_ERRCODE(N) \
 .globl isr ## N ; \
 isr ## N : ; \
-	push $ ## N ;
+	push $ ## N ; \
 	jmp isr_initial_handler
 
 .globl isr_initial_handler
 isr_initial_handler:
 	pusha # push regs eax,ecx,edx,ebx,old esp,ebp,esi,edi
+
+	mov %cr2, %eax
+	pushl %eax # for page faults
 
 	mov %ds, %eax
 	push %eax
@@ -36,9 +39,10 @@ isr_initial_handler:
 	mov %ax, %fs
 	mov %ax, %gs
 
+	add $4, %esp # unpush cr2
 	popa
 
-	add $8, %esp
+	add $8, %esp # unpush isr error code and irq number
 
 	iret # rets and pops cs, ss, ip, sp and flags
 
@@ -60,7 +64,7 @@ ISR_ERRCODE(13)
 ISR_ERRCODE(14)
 ISR_NOERRCODE(15)
 ISR_NOERRCODE(16)
-ISR_NOERRCODE(17)
+ISR_ERRCODE(17)
 ISR_NOERRCODE(18)
 ISR_NOERRCODE(19)
 ISR_NOERRCODE(20)

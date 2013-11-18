@@ -111,12 +111,11 @@ void paging_init_kernel_page_dir(void) {
 void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, uintptr_t vaddr, uint32_t flags) {
 	struct page_table *pt;
 	uintptr_t addr = base_addr;
-	size_t pd_frame_size = PAGE_SIZE * PT_ENTRIES;
 	pd_entry * pde;
 	int pages = align_address(size, PAGE_SIZE) / PAGE_SIZE;
 	int cur_pages;
 
-	while(size > 0) {
+	while(size != 0) {
  		pde = paging_pd_entry_for_addr(ptd, vaddr);
 
 		if(!paging_pd_entry_get_frame(pde)) {
@@ -124,7 +123,7 @@ void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, u
 			if(!pt) {
 				panic("couldn't alloc page table");
 			} else {
-				kprintf("allocating page table at 0x%x\n", pt);
+				//kprintf("allocating page table at 0x%x\n", pt);
 			}
 		} else if(!paging_pd_entry_is_present(pde)) {
 			panic("paging pd entry is not present");
@@ -133,20 +132,23 @@ void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, u
 			panic("already mapped ???");
 		}
 
-		kprintf("mapping vaddr 0x%x to addr 0x%x\n", vaddr, base_addr);
-
 		cur_pages = PT_ENTRIES;
 		if(pages < PT_ENTRIES) {
 			cur_pages = pages;
 		}
+
+		size_t incr = cur_pages * PAGE_SIZE;
+
+		kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
 
 		paging_pt_map(pt, base_addr, cur_pages, flags);
 
 		paging_pd_install_pt(pde, pt, I86_PDE_PRESENT | I86_PDE_WRITABLE);
 
 		pages -= cur_pages;
-		size -= pd_frame_size;
-		addr += pd_frame_size;
+
+		size -= incr;
+		addr += incr;
 	}
 
 }
@@ -157,7 +159,7 @@ void paging_identity_map(struct page_directory * ptd, uintptr_t base_addr, size_
 
 size_t paging_pd_entry_id_for_addr(uintptr_t addr) {
 	size_t id = addr / PAGE_SIZE / PT_ENTRIES;
-	kprintf("using page id %d for addr 0x%x\n", id, addr);
+	//kprintf("using page id %d for addr 0x%x\n", id, addr);
 	return id;
 }
 
@@ -171,7 +173,7 @@ void paging_pd_install_pt(pd_entry * pde, struct page_table * pt, uint32_t flags
 {
 	paging_pd_entry_set_frame(pde, (uintptr_t)pt - (uintptr_t)(&KERNEL_VMA));
 	paging_pd_entry_set_flags(pde, flags, 0L);
-	kprintf("installed pt: 0x%x\n", *pde);
+	//kprintf("installed pt: 0x%x\n", *pde);
 }
 
 /*
@@ -190,6 +192,8 @@ void paging_pt_map(struct page_table * pt, uintptr_t base_addr, int pages, uint3
 	for(i = pages; i < PT_ENTRIES; i++) {
 		pt->entries[i] = 0;
 	}
+
+	//kprintf("mapped pt for frames %x to %x\n", base_addr, addr);
 }
 
 struct page_table * paging_alloc_static_pt(void) {

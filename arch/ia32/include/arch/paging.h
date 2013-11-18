@@ -61,6 +61,8 @@ struct page_table {
 	pt_entry entries[PT_ENTRIES];
 };
 
+extern struct page_directory * _kernel_page_dir;
+
 void paging_set_attr(uint32_t * e, uint32_t attr);
 void paging_clear_attr(uint32_t * e, uint32_t attr);
 

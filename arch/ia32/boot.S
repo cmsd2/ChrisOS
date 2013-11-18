@@ -59,7 +59,7 @@ _start:
 
 	# save multiboot info
 	movl %eax, (_magic - KERNEL_VMA)
-	movl %ebx, (_multiboot_info - KERNEL_VMA)
+	movl %ebx, (_bootstrap_multiboot_info - KERNEL_VMA)
 
 	# here's the trick: we load a GDT with a base address
 	# of 0x40000000 for the code (0x08) and data (0x10) segments
