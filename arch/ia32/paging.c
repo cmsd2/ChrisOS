@@ -137,16 +137,15 @@ void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, u
 			cur_pages = pages;
 		}
 
-		size_t incr = cur_pages * PAGE_SIZE;
-
 		kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
 
-		paging_pt_map(pt, base_addr, cur_pages, flags);
+		cur_pages = paging_pt_map(pt, base_addr, cur_pages, flags);
 
 		paging_pd_install_pt(pde, pt, I86_PDE_PRESENT | I86_PDE_WRITABLE);
 
 		pages -= cur_pages;
 
+		size_t incr = cur_pages * PAGE_SIZE;
 		size -= incr;
 		addr += incr;
 	}
@@ -169,6 +168,19 @@ pd_entry * paging_pd_entry_for_addr(struct page_directory * ptd, uintptr_t addr)
 	return pde;
 }
 
+size_t paging_pt_entry_id_for_addr(uintptr_t addr) {
+	size_t pt_mask = (PAGE_SIZE * PT_ENTRIES) - 1;
+	size_t id = (addr & pt_mask) / PAGE_SIZE;
+	//kprintf("using page table id %d for addr 0x%x\n", id, addr);
+	return id;
+}
+
+pt_entry * paging_pt_entry_for_addr(struct page_table * pt, uintptr_t addr) {
+	size_t pd_id = paging_pt_entry_id_for_addr(addr);
+	pt_entry * pte = pt->entries + pd_id;
+	return pte;
+}
+
 void paging_pd_install_pt(pd_entry * pde, struct page_table * pt, uint32_t flags)
 {
 	paging_pd_entry_set_frame(pde, (uintptr_t)pt - (uintptr_t)(&KERNEL_VMA));
@@ -180,20 +192,34 @@ void paging_pd_install_pt(pd_entry * pde, struct page_table * pt, uint32_t flags
  * initialise a complete page table with mappings for a number of pages
  * for some memory starting at base_addr
  */
-void paging_pt_map(struct page_table * pt, uintptr_t base_addr, int pages, uint32_t flags) {
-	int i;
+size_t paging_pt_map(struct page_table * pt, uintptr_t base_addr, size_t pages, uint32_t flags) {
+	size_t i;
 	uintptr_t addr = base_addr;
+	size_t pt_id = paging_pt_entry_id_for_addr(addr);
+	size_t pt_end_id = pt_id + pages;
+	size_t actual_pages = pages;
 
-	for(i = 0; i < pages; i++) {
+	if(pt_end_id > PT_ENTRIES) {
+		actual_pages -= (pt_end_id - PT_ENTRIES);
+		pt_end_id = PT_ENTRIES;
+	}
+
+	for(i = 0; i < pt_id; i++) {
+		pt->entries[i] = 0;
+	}
+
+	for(; i < pt_end_id; i++) {
 		pt->entries[i] = addr | flags;
 		addr += PAGE_SIZE;
 	}
 
-	for(i = pages; i < PT_ENTRIES; i++) {
+	for(; i < PT_ENTRIES; i++) {
 		pt->entries[i] = 0;
 	}
 
 	//kprintf("mapped pt for frames %x to %x\n", base_addr, addr);
+
+	return actual_pages;
 }
 
 struct page_table * paging_alloc_static_pt(void) {
