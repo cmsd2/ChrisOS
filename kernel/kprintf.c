@@ -43,6 +43,8 @@ typedef long long quad_t;
 #define NULL ((void*)0)
 #define NBBY    8               /* number of bits in a byte */
 char const hex2ascii_data[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+char * const human_units[] = { "B", "KB", "MB", "GB", "TB", "PB" };
+const int max_human_unit = sizeof(human_units) / sizeof(char *) - 1;
 #define hex2ascii(hex)  (hex2ascii_data[hex])
 #define va_list __builtin_va_list
 #define va_start __builtin_va_start
@@ -117,7 +119,9 @@ kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_lis
 	u_char *up;
 	int ch, n;
 	uintmax_t num;
-	int base, lflag, qflag, tmp, width, ladjust, sharpflag, neg, sign, dot;
+	int Bunits;
+	const char *Bunitsstr;
+	int base, Bflag, lflag, qflag, tmp, width, ladjust, sharpflag, neg, sign, dot;
 	int cflag, hflag, jflag, tflag, zflag;
 	int dwidth, upper;
 	char padc;
@@ -147,6 +151,7 @@ kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_lis
 		qflag = 0; lflag = 0; ladjust = 0; sharpflag = 0; neg = 0;
 		sign = 0; dot = 0; dwidth = 0; upper = 0;
 		cflag = 0; hflag = 0; jflag = 0; tflag = 0; zflag = 0;
+		Bflag = 0; Bunits = 0;
 reswitch:	switch (ch = (u_char)*fmt++) {
 		case '.':
 			dot = 1;
@@ -192,6 +197,10 @@ reswitch:	switch (ch = (u_char)*fmt++) {
 			else
 				width = n;
 			goto reswitch;
+		case 'B':
+			Bflag = 1;
+			base = 10;
+			goto handle_nosign;
 		case 'b':
 			num = (u_int)va_arg(ap, int);
 			p = va_arg(ap, char *);
@@ -367,6 +376,13 @@ number:
 				neg = 1;
 				num = -(intmax_t)num;
 			}
+			if (Bflag) {
+				while(Bunits < max_human_unit && num > 1024) {
+					num /= 1024;
+					Bunits++;
+				}
+				Bunitsstr = human_units[Bunits];
+			}
 			p = ksprintn(nbuf, num, base, &tmp, upper);
 			if (sharpflag && num != 0) {
 				if (base == 8)
@@ -376,6 +392,10 @@ number:
 			}
 			if (neg)
 				tmp++;
+
+			if(Bflag) {
+				tmp += strlen(Bunitsstr);
+			}
 
 			if (!ladjust && padc != '0' && width
 			    && (width -= tmp) > 0)
@@ -397,6 +417,11 @@ number:
 
 			while (*p)
 				PCHAR(*p--);
+
+			if(Bflag) {
+				while(*Bunitsstr)
+					PCHAR(*Bunitsstr++);
+			}
 
 			if (ladjust && width && (width -= tmp) > 0)
 				while (width--)
