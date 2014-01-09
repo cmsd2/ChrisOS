@@ -8,3 +8,12 @@ tools/*.sig
 *.img
 *.iso
 .*.swp
+*.old
+*.bak
+CMakeCache.txt
+CopyOfCMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+ChrisOS_config.h
+kernel/kernel

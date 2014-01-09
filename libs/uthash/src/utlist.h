@@ -497,6 +497,37 @@ do {                                                                            
  }                                                                                             \
 } while (0)                                                                                    \
 
+#define LL_POSTPEND_ELEM(head, el, add)                                                         \
+do {                                                                                           \
+ LDECLTYPE(head) _tmp;                                                                         \
+ assert(head != NULL);                                                                         \
+ assert(el != NULL);                                                                           \
+ assert(add != NULL);                                                                          \
+ _tmp = (el)->next;                                                                            \
+ (el)->next = (add);                                                                           \
+ (add)->next = _tmp;                                                                           \
+} while (0)                                                                                    \
+
+#define LL_FIND_TAIL(head, out)                                                                \
+do {                                                                                           \
+    LDECLTYPE(head) _tmp;                                                                      \
+    _tmp = (head);                                                                               \
+    while(_tmp->next) {                                                                        \
+        _tmp = _tmp->next;                                                                      \
+    }                                                                                          \
+    out = _tmp;                                                                                \
+} while(0)                                                                                     \
+
+
+#define LL_APPEND_TAIL(head, tail, add)                                                        \
+do {                                                                                           \
+    if(head) {                                                                                 \
+        LL_POSTPEND_ELEM((head), (tail), (add));                                               \
+    } else {                                                                                   \
+        LL_PREPEND((head), (add));                                                             \
+    }                                                                                          \
+    tail = (add);                                                                              \
+} while (0)                                                                                    \
 
 /******************************************************************************
  * doubly linked list macros (non-circular)                                   *

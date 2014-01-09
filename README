@@ -3,6 +3,7 @@ ChrisOS
 Because like logging frameworks for java, we need more hobby OSs.
 
 
+
 Licensing:
 
 Some files have been copied from other sources:
@@ -22,14 +23,28 @@ basically: ownership retained, all other rights waived, but with a disclaimer.
 
 toolchain.sh is based on the one from HelenOS.
 
+uthash is included in the libs folder. it's slightly modified to add some minor
+features.
+
 In each case, any required copyright info is inside the file.
 All other files are my own work, see the license in this directory.
+
 
 
 Getting Started:
 
 For compiling, start by creating a cross compiler.
 See tools/toolchain.sh
+
+Then edit the kernel/ia32/toolchain.cmake to set the location,
+and run gen.sh to generate/update the makefiles.
+
+Run make to build.
+
+Run run.sh to test in qemu,
+and gdb.sh to attach remotely gdb to running qemu.
+
+
 
 Current problems:
 the C code is not position independent, so it's not possible to
@@ -52,23 +67,33 @@ need to find a prettier way of accessing mapped memory
 e.g. everything ends up having KERNEL_VMA added to it
 
 
-Features:
+
+Features done:
+
 boot from syslinux and also directly from qemu (with -kernel) on ia32
+requires multiboot, reads info from multiboot params
 jump to higher half
 handle interrupts
 printf to 80x24 vga screen
+basic buggy paging
+almost useful virtual memory management
+basic local apic support
+model specific register support
+cpuid support
+
 
 Wishlist:
 
 Next:
-paging
-basic virtual memory management
+more complete bug-free paging
+more complete virtual memory management
 get keyboard input
 framebuffer
 
 Later:
 Evaluate micro or monolithic designs.
 process control blocks
+kernel threads/tasks
 fat16
 vfs?
 scheduler
@@ -83,8 +108,8 @@ usb?
 lots of possibilities
 
 Much Much later and in no particular order:
-reentrancy: nested interrupt service routines
-threads
+reentrancy: nested interrupt service routines, fast and slow handlers?
+userspace threads
 multiprocessor support
 port a libc for userspace
 investigate porting drivers from BSD or minix
@@ -93,16 +118,60 @@ networking stack
 shell
 dtrace
 
+
+
 Memory Layout:
+
 initial boot:
 loaded as one blob as per linker script at 1MB physical address
 immediately loads boot gdt tables to remap first 4MB to 3G linear address
 this captures both bios area and kernel
 
-paging and proper gdt:
+virtual and physical memory management:
 setup the ptd with just two pt entries filled in
 one for first 4MB region and one for the single table starting at 3G
 load gdt with cs and ds ring0 entries starting at linear address 0,
 replacing hacky ones which started at 3G
+linux uses 3 regions: dma (0-16MB), normal (16MB-1GB), and high (1-4GB),
+although the 16MB region may not be needed for PCI DMA?
+fetch memory layout from multiboot info. do we need to check this with acpi?
+calculate regions of available physical memory
 
 
+Memory Management:
+
+
+physical memory management is currently just gdt and paging code
+low level paging code is in kernel/ia32/paging.c
+it doesn't fail fast enough on bad inputs,
+and has some very suspicious logic in places.
+needs a rewrite.
+
+
+virtual memory management is in kernel/mm and 
+is mostly in kmem.{c,h}, allocator.{c,h}, vm_map.{c,h} and range.h
+create a generic physical map of memory with a list of regions for each useable area of memory
+need a physical page allocator that can allocate pages from a region
+
+we use a set of range manipulation macros to add and remove pieces of memory or address space.
+pieces are merged and split as we go. i think linux has something similar somewhere.
+allocating memory involves allocating a chunk of virtual address space, then one-by-one
+allocating physical pages of memory to patch into the page tables.
+
+todo: consider changing the range code to use [start,end) instead of [start,start+size].
+as it is, the code can't be used for a single range which covers the entire 32bit space,
+since size would wrap around. this won't be a problem for memory (either physical or virtual)
+since it's all carved up. could be a problem for other things later.
+
+todo: higher level malloc/slab allocator. so far we can only allocate whole numbers of pages.
+
+todo: use a separate allocator for each distinct zone of memory/address space,
+instead of relying on flags stored inside the allocator's regions.
+that will remove the messy situation with merging regions with different flags set,
+will need to store the extent of the regions in the allocator itself so we can check
+which allocator some free memory needs to go back to.
+won't need to store the flags in the allocated memory piece since we can do a range
+check instead of flags check when freeing.
+
+todo: make sure we track used memory adequately. 
+will become necessary when we're forking, paging to disk, and mmap'ing

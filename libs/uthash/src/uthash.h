@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string.h>   /* memcmp,strlen */
 #include <stddef.h>   /* ptrdiff_t */
-#include <stdlib.h>   /* exit() */
+#include <assert.h>
 
 /* These macros use decltype or the earlier __typeof GNU extension.
    As decltype is only available in newer compilers (VS2010 or gcc 4.3+
@@ -61,13 +61,13 @@ do {                                                                            
 typedef unsigned int uint32_t;
 typedef unsigned char uint8_t;
 #else
-#include <inttypes.h>   /* uint32_t */
+#include <stdint.h>   /* uint32_t */
 #endif
 
 #define UTHASH_VERSION 1.9.8
 
 #ifndef uthash_fatal
-#define uthash_fatal(msg) exit(-1)        /* fatal error (out of memory,etc) */
+#define uthash_fatal(msg) assert(msg)        /* fatal error (out of memory,etc) */
 #endif
 #ifndef uthash_malloc
 #define uthash_malloc(sz) malloc(sz)      /* malloc fcn                      */
@@ -274,7 +274,11 @@ do {                                                                            
  * This is for uthash developer only; it compiles away if HASH_DEBUG isn't defined.
  */
 #ifdef HASH_DEBUG
-#define HASH_OOPS(...) do { fprintf(stderr,__VA_ARGS__); exit(-1); } while (0)
+#ifdef _KERNEL
+#define HASH_OOPS(...) do { kprintf(__VA_ARGS__); assert(0); } while (0)
+#else
+#define HASH_OOPS(...) do { fprintf(stderr,__VA_ARGS__); assert(0); } while (0)
+#endif
 #define HASH_FSCK(hh,head)                                                       \
 do {                                                                             \
     unsigned _bkt_i;                                                             \
