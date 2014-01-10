@@ -309,8 +309,16 @@ unpack_tarball() {
 	
 	change_title "Unpacking ${DESC}"
 	echo " >>> Unpacking ${DESC}"
+
+    EXT="${FILE##*.}"
+    OPTS="-xjf"
+    echo "ext is $EXT"
+
+    if [ "$EXT" = "gz" ]; then
+        OPTS="-xzf"
+    fi
 	
-	tar -xjf "${FILE}"
+	tar $OPTS "${FILE}"
 	check_error $? "Error unpacking ${DESC}."
 }
 
@@ -336,6 +344,11 @@ gpg_recv_key() {
 
 prepare() {
 	show_dependencies
+
+    if [ "$PREPARE" = 0 ]; then
+        return
+    fi
+
 	#check_dependecies
 	#show_countdown 10
 	
@@ -402,10 +415,10 @@ build_target() {
 	cd "${WORKDIR}"
 	check_error $? "Change directory failed."
 	
+	unpack_tarball "${BASEDIR}/${MPC}" "MPC"
 	unpack_tarball "${BASEDIR}/${BINUTILS}" "binutils"
 	unpack_tarball "${BASEDIR}/${GCC}" "GCC"
 	unpack_tarball "${BASEDIR}/${GDB}" "GDB"
-	unpack_tarball "${BASEDIR}/${MPC}" "MPC"
 	unpack_tarball "${BASEDIR}/${MPFR}" "MPFR"
 	unpack_tarball "${BASEDIR}/${GMP}" "GMP"
 	unpack_tarball "${BASEDIR}/${ICONV}" "ICONV"
@@ -478,7 +491,7 @@ case "$1" in
 		build_target "arm32" "arm-linux-gnueabi"
 		;;
 	"ia32")
-		#prepare
+		prepare
 		build_target "ia32" "i686-pc-elf"
 		;;
 	"ia64")
