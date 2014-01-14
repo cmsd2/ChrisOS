@@ -5,40 +5,120 @@
 #include <utils/kprintf.h>
 #include <arch/paging.h>
 #include <utils/mem.h>
+#include <arch/io_ports.h>
+#include <sys/io.h>
+#include <arch/pit.h>
+#include <arch/ps2.h>
+#include <standard.h>
+
+struct apic_base_msr _apic_base_msr;
 
 void apic_init(const struct cpuid_info * cpu) {
 	assert(apic_available(cpu));
 
-	struct apic_base_msr msr;
-	apic_read_msr(cpu, &msr);
+	apic_read_msr(cpu, &_apic_base_msr);
 
-	apic_print_base_msr(&msr);
+	apic_print_base_msr(&_apic_base_msr);
 
 	//TODO: base addr can be 36 or more bits with pae and/or long mode
 	unsigned int low, high;
-	apic_get_base(&msr, &low, &high);
+	apic_get_base(&_apic_base_msr, &low, &high);
 
 	size_t size = align_padding((uintptr_t)low, 0x400000);
 
 	paging_identity_map(_kernel_page_dir, (uintptr_t) low, size, I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_NOT_CACHEABLE);
 
-	apic_global_enable(cpu, &msr);
+    // i32 10.6.2.2:
+    // flat model IPI desination 31:28 set 0xf, 28:0 reserved (all '1')
+    apic_write_reg_32(APIC_REG_DFR, 0xffffffff);
+
+    // logical apic ID 31:24 set to 8bit logical id, 23:0 reserved
+    // todo: in multiprocessor system each cpu has different logical ID
+    apic_write_reg_32(APIC_REG_LDR, 0x1 << 24);
+
+    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_MASKED);
+    apic_write_reg_32(APIC_REG_LVT_PERF_MCR, APIC_LVT_NMI);
+    apic_write_reg_32(APIC_REG_LVT_LINT0, APIC_LVT_MASKED);
+    apic_write_reg_32(APIC_REG_LVT_LINT1, APIC_LVT_MASKED);
+    apic_write_reg_32(APIC_REG_TPR, 0);
+
+    apic_timer_init();
+
+	apic_global_enable(cpu);
 
 	//todo mask all the interrupts until ready to receive them
-	apic_sivr_enable(&msr);
+
+    union apic_sivr sivr = {.value = 0};
+    sivr.fields.software_enable = 1;
+    sivr.fields.spurious_vector = 39;
+    apic_write_reg_32(APIC_REG_SIVR, sivr.value);
+}
+
+// based on wiki.osdev.org/APIC_timer
+void apic_timer_init() {
+    unsigned int timer_div = 16;
+    unsigned int test_sleep_freq = 10; // Hz
+    unsigned int pit_freq = 1193180; // Hz
+    unsigned int test_sleep_time = pit_freq / test_sleep_freq;
+
+    apic_write_reg_32(APIC_REG_LVT_TIMER, 32);
+
+    apic_write_reg_32(APIC_REG_TIMER_DCR, timer_div);
+
+    // enable PIT channel 2, but not PC Speaker
+    unsigned char nmi_sc = inb(NMI_STATUS_AND_CONTROL);
+    nmi_sc &= NMI_SC_MASK(NMI_SC_SPEAKER_ENABLE);
+    nmi_sc |= NMI_SC_TMR2_ENABLE;
+    outb(NMI_STATUS_AND_CONTROL, nmi_sc);
+
+    // set PIT ch2 to one-shot mode
+    pit_set_mode(pit_channel_2, pit_low_high_byte, pit_mode_1_programmable_one_shot);
+    //1193180/100 Hz = 11931 = 0x2e9b
+    pit_set_counter(pit_channel_2, LOW_BYTE(test_sleep_time));
+    ps2_read_data(); // delay
+    pit_set_counter(pit_channel_2, HIGH_BYTE(test_sleep_time));
+
+    uint8_t tmp = inb(NMI_STATUS_AND_CONTROL);
+    tmp &= NMI_SC_MASK(NMI_SC_TMR2_ENABLE);
+
+    // pulse the timer bit low then high again to reset
+    outb(NMI_STATUS_AND_CONTROL, tmp);
+    outb(NMI_STATUS_AND_CONTROL, tmp | NMI_SC_TMR2_ENABLE);
+
+    // reset apic timer counter
+    unsigned int start_count = -1;
+    apic_write_reg_32(APIC_REG_TIMER_ICR, start_count);
+
+    while(!(inb(NMI_STATUS_AND_CONTROL) & NMI_SC_TMR2_OUT_STS));
+
+    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_MASKED);
+
+    unsigned int curcount;
+    apic_read_reg_32(APIC_REG_TIMER_CCR, &curcount);
+
+    unsigned int ticks = start_count - curcount;
+    uint32_t cpu_bus_freq = ticks * timer_div * test_sleep_freq;
+    //ticks_per_quantum = cpu_bus_freq / quantum / timer_div;
+    kprintf("done initialising timer. freq=%d\n", cpu_bus_freq);
+
+    //todo: save this stuff somewhere
+}
+
+const struct apic_base_msr * apic_get_base_msr() {
+    return &_apic_base_msr;
 }
 
 /*
  * can't be done after global disable, without reset.
  */
-void apic_global_enable(const struct cpuid_info * cpu, struct apic_base_msr * msr) {
-	if(!msr->low.fields.global_enable) {
-		msr->low.fields.global_enable = 1;
+void apic_global_enable(const struct cpuid_info * cpu) {
+	if(!_apic_base_msr.low.fields.global_enable) {
+		_apic_base_msr.low.fields.global_enable = 1;
 
-		apic_write_msr(msr);
-		apic_read_msr(cpu, msr);
+		apic_write_msr(&_apic_base_msr);
+		apic_read_msr(cpu, &_apic_base_msr);
 
-		assert(msr->low.fields.global_enable);
+		assert(_apic_base_msr.low.fields.global_enable);
 	}
 }
 
@@ -51,9 +131,9 @@ uintptr_t apic_phys_to_linear_addr(unsigned int low, unsigned int __attribute__ 
 	return low;
 }
 
-void apic_read_reg_32(const struct apic_base_msr * msr, unsigned int reg, unsigned int * value) {
+void apic_read_reg_32(unsigned int reg, unsigned int * value) {
 	unsigned int low, high;
-	apic_get_base(msr, &low, &high);
+	apic_get_base(&_apic_base_msr, &low, &high);
 
 	low += reg;
 
@@ -62,9 +142,9 @@ void apic_read_reg_32(const struct apic_base_msr * msr, unsigned int reg, unsign
 	*value = *addr;
 }
 
-void apic_write_reg_32(const struct apic_base_msr * msr, unsigned int reg, unsigned int value) {
+void apic_write_reg_32(unsigned int reg, unsigned int value) {
 	unsigned int low, high;
-	apic_get_base(msr, &low, &high);
+	apic_get_base(&_apic_base_msr, &low, &high);
 
 	low += reg;
 
@@ -73,25 +153,25 @@ void apic_write_reg_32(const struct apic_base_msr * msr, unsigned int reg, unsig
 	*addr = value;
 }
 
-void apic_sivr_enable(const struct apic_base_msr * msr) {
-	struct apic_sivr sivr_reg;
-	apic_read_reg_32(msr, APIC_REG_SIVR, &sivr_reg.sivr.value);
+void apic_sivr_enable() {
+    union apic_sivr sivr_reg;
+	apic_read_reg_32(APIC_REG_SIVR, &sivr_reg.value);
 
-	if(!sivr_reg.sivr.fields.software_enable) {
-		sivr_reg.sivr.fields.software_enable = 1;
+	if(!sivr_reg.fields.software_enable) {
+		sivr_reg.fields.software_enable = 1;
 
-		apic_write_reg_32(msr, APIC_REG_SIVR, sivr_reg.sivr.value);
+		apic_write_reg_32(APIC_REG_SIVR, sivr_reg.value);
 	}
 }
 
-void apic_sivr_disable(const struct apic_base_msr * msr) {
-	struct apic_sivr sivr_reg;
-	apic_read_reg_32(msr, APIC_REG_SIVR, &sivr_reg.sivr.value);
+void apic_sivr_disable() {
+	union apic_sivr sivr_reg;
+	apic_read_reg_32(APIC_REG_SIVR, &sivr_reg.value);
 
-	if(sivr_reg.sivr.fields.software_enable) {
-		sivr_reg.sivr.fields.software_enable = 0;
+	if(sivr_reg.fields.software_enable) {
+		sivr_reg.fields.software_enable = 0;
 
-		apic_write_reg_32(msr, APIC_REG_SIVR, sivr_reg.sivr.value);
+		apic_write_reg_32(APIC_REG_SIVR, sivr_reg.value);
 	}
 }
 
@@ -153,5 +233,10 @@ void apic_set_base(struct apic_base_msr * msr, uint32_t low, uint32_t high) {
 
 uint8_t apic_current_cpu_apic_id(void) {
 	return 0;
+}
+
+void apic_eoi() {
+    //todo: check this EOI thing. only for FIXED delivery mode interrupts
+    apic_write_reg_32(APIC_REG_EOI, 0);
 }
 

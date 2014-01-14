@@ -243,6 +243,30 @@ interrupts.c.s:
 	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/interrupts.c.s
 .PHONY : interrupts.c.s
 
+io.obj: io.c.obj
+.PHONY : io.obj
+
+# target to build an object file
+io.c.obj:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/io.c.obj
+.PHONY : io.c.obj
+
+io.i: io.c.i
+.PHONY : io.i
+
+# target to preprocess a source file
+io.c.i:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/io.c.i
+.PHONY : io.c.i
+
+io.s: io.c.s
+.PHONY : io.s
+
+# target to generate assembly for a file
+io.c.s:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/io.c.s
+.PHONY : io.c.s
+
 isrs.obj: isrs.S.obj
 .PHONY : isrs.obj
 
@@ -323,6 +347,30 @@ pic.c.s:
 	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/pic.c.s
 .PHONY : pic.c.s
 
+pit.obj: pit.c.obj
+.PHONY : pit.obj
+
+# target to build an object file
+pit.c.obj:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/pit.c.obj
+.PHONY : pit.c.obj
+
+pit.i: pit.c.i
+.PHONY : pit.i
+
+# target to preprocess a source file
+pit.c.i:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/pit.c.i
+.PHONY : pit.c.i
+
+pit.s: pit.c.s
+.PHONY : pit.s
+
+# target to generate assembly for a file
+pit.c.s:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/pit.c.s
+.PHONY : pit.c.s
+
 power.obj: power.c.obj
 .PHONY : power.obj
 
@@ -346,6 +394,30 @@ power.s: power.c.s
 power.c.s:
 	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/power.c.s
 .PHONY : power.c.s
+
+ps2.obj: ps2.c.obj
+.PHONY : ps2.obj
+
+# target to build an object file
+ps2.c.obj:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/ps2.c.obj
+.PHONY : ps2.c.obj
+
+ps2.i: ps2.c.i
+.PHONY : ps2.i
+
+# target to preprocess a source file
+ps2.c.i:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/ps2.c.i
+.PHONY : ps2.c.i
+
+ps2.s: ps2.c.s
+.PHONY : ps2.s
+
+# target to generate assembly for a file
+ps2.c.s:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/ps2.c.s
+.PHONY : ps2.c.s
 
 # Help Target
 help:
@@ -372,6 +444,9 @@ help:
 	@echo "... interrupts.obj"
 	@echo "... interrupts.i"
 	@echo "... interrupts.s"
+	@echo "... io.obj"
+	@echo "... io.i"
+	@echo "... io.s"
 	@echo "... isrs.obj"
 	@echo "... msrs.obj"
 	@echo "... msrs.i"
@@ -382,9 +457,15 @@ help:
 	@echo "... pic.obj"
 	@echo "... pic.i"
 	@echo "... pic.s"
+	@echo "... pit.obj"
+	@echo "... pit.i"
+	@echo "... pit.s"
 	@echo "... power.obj"
 	@echo "... power.i"
 	@echo "... power.s"
+	@echo "... ps2.obj"
+	@echo "... ps2.i"
+	@echo "... ps2.s"
 .PHONY : help
 
 

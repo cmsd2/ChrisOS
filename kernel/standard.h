@@ -15,4 +15,7 @@
      _a < _b ? _a : _b; })
 #endif
 
+#define LOW_BYTE(word) ((word)&0xff)
+#define HIGH_BYTE(word) LOW_BYTE((word)>>8)
+
 #endif

@@ -5,14 +5,69 @@
 #include <arch/interrupts.h>
 #include <arch/idt.h>
 #include <arch/gdt.h>
+#include <arch/apic.h>
 #include <utils/kprintf.h>
 #include <utils/mem.h>
 #include <utils/panic.h>
+#include <utlist.h>
+
+struct interrupt_handler * handlers[256];
+struct interrupt_handler * _free_handlers;
 
 void interrupts_init() {
 	idt_init();
 
 	interrupts_install_handlers();
+}
+
+struct interrupt_handler * interrupts_handler_alloc() {
+    struct interrupt_handler * handler;
+    if(!_free_handlers) {
+        handler = (struct interrupt_handler *)kalloc_static(sizeof(struct interrupt_handler), sizeof(struct interrupt_handler));
+        assert(handler);
+    } else {
+        handler = _free_handlers;
+        LL_DELETE(_free_handlers, _free_handlers);
+    }
+    return handler;
+}
+
+void interrupts_handler_free(struct interrupt_handler * handler) {
+    LL_PREPEND(_free_handlers, handler);
+}
+
+void interrupts_install_handler(uint32_t int_no, interrupt_handler_fn handler_fn, void * data) {
+    assert(int_no < MAX_INTERRUPTS); 
+
+    struct interrupt_handler * handler = interrupts_handler_alloc();
+    handler->handler = handler_fn;
+    handler->data = data;
+
+    LL_PREPEND(handlers[int_no], handler);
+}
+
+void interrupts_uninstall_handler(uint32_t int_no, interrupt_handler_fn handler_fn) {
+    struct interrupt_handler * handler;
+
+    LL_FOREACH(handlers[int_no], handler) {
+        if(handler->handler == handler_fn) {
+            LL_DELETE(handlers[int_no], handler);
+            interrupts_handler_free(handler);
+            return;
+        }
+    }
+}
+
+bool interrupts_dispatch(uint32_t int_no, struct registers * regs) {
+    bool result = false;
+    struct interrupt_handler * handler;
+    LL_FOREACH(handlers[int_no], handler) {
+        result = handler->handler(int_no, regs, handler->data);
+        if(result) {
+            break;
+        }
+    }
+    return result;
 }
 
 void interrupts_disable() {
@@ -26,6 +81,7 @@ void interrupts_enable() {
 void interrupts_isr_handler(struct registers regs)
 {
 	kprintf("interrupt %hhu: %hhu\n", regs.int_no, regs.err_code);
+    interrupts_dispatch(regs.int_no, &regs);
 	if(regs.int_no == 14) {
 		kprintf("page fault accessing %x\n", regs.cr2);
 		__asm__ volatile ("hlt");
@@ -68,6 +124,9 @@ void interrupts_install_handlers(void) {
 	idt_set_gate(29, (uint32_t)isr29, cs, flags);
 	idt_set_gate(30, (uint32_t)isr30, cs, flags);
 	idt_set_gate(31, (uint32_t)isr31, cs, flags);
+
+	idt_set_gate(32, (uint32_t)isr32, cs, flags);
+	idt_set_gate(39, (uint32_t)isr39, cs, flags);
 
 	idt_flush();
 }
