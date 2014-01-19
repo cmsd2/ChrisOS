@@ -3,5 +3,6 @@
 
 unsigned char inb(unsigned short int port);
 void outb(unsigned char value, unsigned short int port);
+void io_wait();
 
 #endif

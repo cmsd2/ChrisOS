@@ -2,6 +2,7 @@
 #define KERNEL_KPRINTF_H
 
 #include <stdarg.h>
+#include <stdint.h>
 
 void putchar(int c, void *arg);
 void kprintf(const char *fmt, ...);

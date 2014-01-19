@@ -9,9 +9,14 @@
 #include <sys/io.h>
 #include <arch/pit.h>
 #include <arch/ps2.h>
+#include <arch/nmi.h>
 #include <standard.h>
+#include <arch/interrupts.h>
+#include <arch/pic.h>
+#include <utils/sort.h>
 
 struct apic_base_msr _apic_base_msr;
+uint32_t _apic_bus_freq;
 
 void apic_init(const struct cpuid_info * cpu) {
 	assert(apic_available(cpu));
@@ -42,8 +47,6 @@ void apic_init(const struct cpuid_info * cpu) {
     apic_write_reg_32(APIC_REG_LVT_LINT1, APIC_LVT_MASKED);
     apic_write_reg_32(APIC_REG_TPR, 0);
 
-    apic_timer_init();
-
 	apic_global_enable(cpu);
 
 	//todo mask all the interrupts until ready to receive them
@@ -52,56 +55,77 @@ void apic_init(const struct cpuid_info * cpu) {
     sivr.fields.software_enable = 1;
     sivr.fields.spurious_vector = 39;
     apic_write_reg_32(APIC_REG_SIVR, sivr.value);
+
+    for(int i = 0; i < 2; i++)
+    apic_timer_init();
+}
+
+void apic_timer_init() {
+    uint32_t freqs[3];
+    for(int i = 0; i < 3; i++) {
+        freqs[i] = apic_measure_timer_freq();
+    }
+    insertion_sort((void**)freqs, 3, comp_uint);
+    for(int i = 0; i < 3; i++) {
+        kprintf("apic bus freq %d = 0x%x\n", i, freqs[i]);
+    }
+
+    _apic_bus_freq = freqs[1];
+    kprintf("apic bus freq = 0x%x\n", _apic_bus_freq);
 }
 
 // based on wiki.osdev.org/APIC_timer
-void apic_timer_init() {
+uint32_t apic_measure_timer_freq() {
+    unsigned char timer_interrupt = pic_interrupt_for_irq(0);
+    volatile unsigned int tick = 0;
     unsigned int timer_div = 16;
     unsigned int test_sleep_freq = 10; // Hz
     unsigned int pit_freq = 1193180; // Hz
     unsigned int test_sleep_time = pit_freq / test_sleep_freq;
+    kprintf("test sleep time is %d\n", test_sleep_time);
 
-    apic_write_reg_32(APIC_REG_LVT_TIMER, 32);
-
-    apic_write_reg_32(APIC_REG_TIMER_DCR, timer_div);
-
-    // enable PIT channel 2, but not PC Speaker
-    unsigned char nmi_sc = inb(NMI_STATUS_AND_CONTROL);
-    nmi_sc &= NMI_SC_MASK(NMI_SC_SPEAKER_ENABLE);
-    nmi_sc |= NMI_SC_TMR2_ENABLE;
-    outb(NMI_STATUS_AND_CONTROL, nmi_sc);
-
-    // set PIT ch2 to one-shot mode
-    pit_set_mode(pit_channel_2, pit_low_high_byte, pit_mode_1_programmable_one_shot);
-    //1193180/100 Hz = 11931 = 0x2e9b
-    pit_set_counter(pit_channel_2, LOW_BYTE(test_sleep_time));
-    ps2_read_data(); // delay
-    pit_set_counter(pit_channel_2, HIGH_BYTE(test_sleep_time));
-
-    uint8_t tmp = inb(NMI_STATUS_AND_CONTROL);
-    tmp &= NMI_SC_MASK(NMI_SC_TMR2_ENABLE);
-
-    // pulse the timer bit low then high again to reset
-    outb(NMI_STATUS_AND_CONTROL, tmp);
-    outb(NMI_STATUS_AND_CONTROL, tmp | NMI_SC_TMR2_ENABLE);
-
-    // reset apic timer counter
     unsigned int start_count = -1;
-    apic_write_reg_32(APIC_REG_TIMER_ICR, start_count);
 
-    while(!(inb(NMI_STATUS_AND_CONTROL) & NMI_SC_TMR2_OUT_STS));
+    apic_timer_set_divider(timer_div);
 
-    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_MASKED);
+    pit_one_shot(pit_channel_2, test_sleep_time);
+    apic_timer_set_initial_count(start_count);
+    
+    //wait until pic counter reaches 0
+    nmi_timer_2_spinwait();
 
     unsigned int curcount;
-    apic_read_reg_32(APIC_REG_TIMER_CCR, &curcount);
+    curcount = apic_timer_get_current_count();
+    apic_timer_set_initial_count(0);
 
     unsigned int ticks = start_count - curcount;
     uint32_t cpu_bus_freq = ticks * timer_div * test_sleep_freq;
     //ticks_per_quantum = cpu_bus_freq / quantum / timer_div;
-    kprintf("done initialising timer. freq=%d\n", cpu_bus_freq);
+    kprintf("done initialising timer. freq=%u\n", cpu_bus_freq);
 
-    //todo: save this stuff somewhere
+    return cpu_bus_freq;
+}
+
+void apic_timer_set_initial_count(unsigned int start_count) {
+    apic_write_reg_32(APIC_REG_TIMER_ICR, start_count);
+}
+
+void apic_timer_disable_interrupt() {
+    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_MASKED);
+}
+
+void apic_timer_enable_interrupt(uint8_t int_no) {
+    apic_write_reg_32(APIC_REG_LVT_TIMER, int_no);
+}
+
+unsigned int apic_timer_get_current_count() {
+    unsigned int curcount;
+    apic_read_reg_32(APIC_REG_TIMER_CCR, &curcount);
+    return curcount;
+}
+
+void apic_timer_set_divider(unsigned int timer_div) {
+    apic_write_reg_32(APIC_REG_TIMER_DCR, timer_div);
 }
 
 const struct apic_base_msr * apic_get_base_msr() {

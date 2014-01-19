@@ -81,10 +81,23 @@ void interrupts_enable() {
 void interrupts_isr_handler(struct registers regs)
 {
 	kprintf("interrupt %hhu: %hhu\n", regs.int_no, regs.err_code);
-    interrupts_dispatch(regs.int_no, &regs);
-	if(regs.int_no == 14) {
+
+    bool handled = interrupts_dispatch(regs.int_no, &regs);
+
+    if(handled)
+        return;
+
+	switch(regs.int_no) {
+    case 14:
 		kprintf("page fault accessing %x\n", regs.cr2);
 		__asm__ volatile ("hlt");
+        break;
+    case 13:
+        kprintf("general protection fault\n");
+        __asm__ volatile ("hlt");
+        break;
+    default:
+        break;
 	}
 }
 

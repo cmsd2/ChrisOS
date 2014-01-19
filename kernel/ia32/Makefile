@@ -299,6 +299,30 @@ msrs.c.s:
 	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/msrs.c.s
 .PHONY : msrs.c.s
 
+nmi.obj: nmi.c.obj
+.PHONY : nmi.obj
+
+# target to build an object file
+nmi.c.obj:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/nmi.c.obj
+.PHONY : nmi.c.obj
+
+nmi.i: nmi.c.i
+.PHONY : nmi.i
+
+# target to preprocess a source file
+nmi.c.i:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/nmi.c.i
+.PHONY : nmi.c.i
+
+nmi.s: nmi.c.s
+.PHONY : nmi.s
+
+# target to generate assembly for a file
+nmi.c.s:
+	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/ia32/CMakeFiles/ia32.dir/build.make kernel/ia32/CMakeFiles/ia32.dir/nmi.c.s
+.PHONY : nmi.c.s
+
 paging.obj: paging.c.obj
 .PHONY : paging.obj
 
@@ -451,6 +475,9 @@ help:
 	@echo "... msrs.obj"
 	@echo "... msrs.i"
 	@echo "... msrs.s"
+	@echo "... nmi.obj"
+	@echo "... nmi.i"
+	@echo "... nmi.s"
 	@echo "... paging.obj"
 	@echo "... paging.i"
 	@echo "... paging.s"

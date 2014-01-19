@@ -54,4 +54,6 @@ void pit_set_counter(enum pit_select_channel channel, uint8_t value);
 
 unsigned short pit_io_port(enum pit_select_channel channel);
 
+void pit_one_shot(enum pit_select_channel channel, unsigned short ticks);
+
 #endif

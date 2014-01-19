@@ -1,5 +1,4 @@
 # based on code from osdev.org
-
 .section .text
 
 # Multiboot constants
@@ -15,7 +14,20 @@
 # this section is linked in the high half,
 # which isn't ideal, but we adjust the addresses and cope.
 .section .setup
-trickgdt:
+.align 4096
+
+_bootstrap_page_directory:
+# page 1 4MB starting at 0x0
+.int 0x83
+# pages 2-767
+.fill 767, 4, 0
+# page 768
+.int 0x83
+# page 769-1024
+.fill 255, 4, 0
+_bootstrap_page_directory_end:
+
+gdt_desc:
 	.short (gdt_end - gdt - 1) # size-1 of the GDT
 	.int (gdt - KERNEL_VMA) # physical address of GDT
  
@@ -26,19 +38,20 @@ gdt:
 	# null gate:
 	.int 0, 0
 
-	# code selector 0x08: base 0x40000000, limit 0xFFFFFFFF, 
+	# code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, 
 	# type 0x9A, granularity 0xCF
-	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0x40
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0x00
 
-	# data selector 0x10: base 0x40000000, limit 0xFFFFFFFF, 
+	# data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, 
 	# type 0x92, granularity 0xCF
-	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0x40
+	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0x00
 
 	# ring 3 entries
-	#.byte 0xFF, 0xFF, 0, 0, 0, 0xFA, 0xCF, 0x40
-	#.byte 0xFF, 0xFF, 0, 0, 0, 0xF2, 0xCF, 0x40
+	#.byte 0xFF, 0xFF, 0, 0, 0, 0xFA, 0xCF, 0x00
+	#.byte 0xFF, 0xFF, 0, 0, 0, 0xF2, 0xCF, 0x00
 gdt_end:
  
+
 
 .section .multiboot
 .align 4
@@ -61,15 +74,25 @@ _start:
 	movl %eax, (_magic - KERNEL_VMA)
 	movl %ebx, (_bootstrap_multiboot_info - KERNEL_VMA)
 
-	# here's the trick: we load a GDT with a base address
-	# of 0x40000000 for the code (0x08) and data (0x10) segments
-	mov $trickgdt, %ebx
+    # simple identity gdt. no tricks.
+	mov $gdt_desc, %ebx
 	subl $KERNEL_VMA, %ebx
 	lgdt (%ebx)
 
-	jmp $0x08, $_start_higher_half
-_start_higher_half:
+    # setup bootstrap paging so that kernel is mapped to higher half
+    mov %cr4, %eax
+    or $0x10, %eax
+    mov %eax, %cr4
 
+    mov $_bootstrap_page_directory - KERNEL_VMA, %eax
+    mov %eax, %cr3
+    mov %cr0, %eax
+    or $0x80000000, %eax
+    mov %eax, %cr0
+
+	jmp $0x08, $_start_higher_half
+
+_start_higher_half:
 	mov $0x10, %ax
 	mov %ax, %ds
 	mov %ax, %es
@@ -77,10 +100,6 @@ _start_higher_half:
 	mov %ax, %gs
 	mov %ax, %ss
  
-	# from now the CPU will translate automatically every address
-	# by adding the base 0x40000000
-	# for our high base address of 3GB, this wraps around to 0x0
-
 	mov $stack_top, %esp
  
 	call kmain

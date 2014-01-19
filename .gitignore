@@ -4,7 +4,7 @@ tools/*.asc
 tools/*.sig
 *.o
 *.a
-*.bin
+kernel.bin
 *.img
 *.iso
 .*.swp

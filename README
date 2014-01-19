@@ -26,6 +26,8 @@ toolchain.sh is based on the one from HelenOS.
 uthash is included in the libs folder. it's slightly modified to add some minor
 features.
 
+utils/sort.c is based on code from wikipedia
+
 In each case, any required copyright info is inside the file.
 All other files are my own work, see the license in this directory.
 
@@ -47,25 +49,10 @@ and gdb.sh to attach remotely gdb to running qemu.
 
 
 Current problems:
-the C code is not position independent, so it's not possible to
-use it in boot.S before paging is set up if it's linked assuming
-high virtual memory addresses.
-solution seems to be to transition to using linear addresses asap,
-initially with just the GDT, then with paging taking over.
-
-before getting the GDT working, I had tried splitting the C code
-into two parts -- one for low virtual addresses 
-and one for high ones, but I can't seem to
-access the low parts. is the runtime elf loader doing something weird?
-have i misunderstood how the linker works?
-could use objcopy to duplicate C code so it's available both pre
-and post jump if we can rely on the runtime loading.
-
-multiboot structures use physical addresses. 
-remember to add KERNEL_VMA to everything before accessing pointers.
-need to find a prettier way of accessing mapped memory
-e.g. everything ends up having KERNEL_VMA added to it
-
+interrupt handling is messy
+paging code is too complicated
+no slab allocators yet
+too reliant on kprintf, and tiny 80x24 vga non-scrolling display :(
 
 
 Features done:
@@ -80,6 +67,9 @@ almost useful virtual memory management
 basic local apic support
 model specific register support
 cpuid support
+pic support
+pit support
+apic timer calibration
 
 
 Wishlist:

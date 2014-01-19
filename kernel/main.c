@@ -23,11 +23,12 @@
  
 void kmain()
 {
-	terminal_initialize();
 	layout_init();
 
 	paging_init();
 	gdt_install();
+
+	terminal_initialize();
 
 	load_multiboot_info();
 
@@ -37,7 +38,13 @@ void kmain()
 	kprintf("kernel mem start: 0x%x\n", _kernel_layout.memory_start);
 	kprintf("kernel mem end: 0x%x\n", _kernel_layout.memory_end);
 
-	multiboot_print_info();
+	//multiboot_print_info();
+
+    interrupts_init();
+    pic_init();
+
+	interrupts_enable();
+
 
     kmem_init();
 
@@ -45,17 +52,13 @@ void kmain()
 
     kmem_load_layout();
 
-	kmem_print_info();
+	//kmem_print_info();
 
     process_system_init();
 
-	interrupts_init();
-
-	//interrupts_enable();
-
 	// check interrupts work
-	//__asm__("int $0x3");
-	//__asm__("int $0x4");
+	__asm__("int $0x3");
+	__asm__("int $0x4");
  
 	kprintf("Hello, kernel world!\n");
 
@@ -66,6 +69,5 @@ void kmain()
 	cpuid_read_info(&cpu);
 	//cpuid_print_info(&cpu);
 
-	pic_disable();
 	apic_init(&cpu);
 }

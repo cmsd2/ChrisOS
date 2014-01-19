@@ -2,6 +2,9 @@
 #include <utils/panic.h>
 #include <assert.h>
 #include <sys/io.h>
+#include <arch/ps2.h>
+#include <standard.h>
+#include <utils/kprintf.h>
 
 void pit_set_mode(enum pit_select_channel channel, enum pit_access_mode access_mode, enum pit_operating_mode mode) {
     unsigned short port = PIT_CMD_PORT;
@@ -13,13 +16,15 @@ void pit_set_mode(enum pit_select_channel channel, enum pit_access_mode access_m
     mode_reg.fields.access_mode = access_mode;
     mode_reg.fields.select_channel = channel;
 
-    outb(port, mode_reg.value);
+    kprintf("writing %hhx to pit port %hx\n", mode_reg.value, port);
+    outb(mode_reg.value, port);
 }
 
 void pit_set_counter(enum pit_select_channel channel, uint8_t value) {
     unsigned short port = pit_io_port(channel);
 
-    outb(port, value);
+    kprintf("setting counter to %hhx on port %hx\n", value, port);
+    outb(value, port);
 }
 
 unsigned short pit_io_port(enum pit_select_channel channel) {
@@ -35,3 +40,10 @@ unsigned short pit_io_port(enum pit_select_channel channel) {
     }
 }
 
+void pit_one_shot(enum pit_select_channel channel, unsigned short ticks) {
+    pit_set_mode(channel, pit_low_high_byte, pit_mode_0_interrupt_on_terminal_count);
+
+    pit_set_counter(channel, LOW_BYTE(ticks));
+    io_wait(); // delay
+    pit_set_counter(channel, HIGH_BYTE(ticks));
+}

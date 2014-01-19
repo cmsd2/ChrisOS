@@ -146,6 +146,7 @@ union apic_sivr {
 
 void apic_init(const struct cpuid_info * cpu);
 void apic_timer_init();
+uint32_t apic_measure_timer_freq();
 bool apic_available(const struct cpuid_info * cpu);
 void apic_print_base_msr(const struct apic_base_msr * msr);
 uint8_t apic_current_cpu_apic_id(void);
@@ -163,5 +164,10 @@ const struct apic_base_msr * apic_get_base_msr();
 void apic_lvt_write(unsigned int reg, const union apic_lvt * lvt);
 void apic_lvt_read(unsigned int reg, union apic_lvt * lvt);
 void apic_eoi();
+void apic_timer_disable_interrupt();
+void apic_timer_enable_interrupt(uint8_t int_no);
+void apic_timer_set_initial_count(unsigned int start_count);
+void apic_timer_set_divider(unsigned int div);
+unsigned int apic_timer_get_current_count();
 
 #endif

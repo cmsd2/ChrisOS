@@ -9,8 +9,6 @@ SECTIONS
 
 	.text  : AT(ADDR(.text) - KERNEL_VMA)
 	{
-		_setup = .;
-		*(.setup)
 		*(.multiboot)
 		_code = .;
 		*(.text)
@@ -24,8 +22,10 @@ SECTIONS
 
 	.data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VMA)
    	{
+		_setup = .;
+		*(.setup)
 		_data = .;
-        	*(.data)
+        *(.data)
    	}
 
 	.bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VMA)
