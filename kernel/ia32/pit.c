@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <sys/io.h>
 #include <arch/ps2.h>
-#include <standard.h>
+#include <sys/standard.h>
 #include <utils/kprintf.h>
 
 void pit_set_mode(enum pit_select_channel channel, enum pit_access_mode access_mode, enum pit_operating_mode mode) {

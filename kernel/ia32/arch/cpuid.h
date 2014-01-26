@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <standard.h>
+#include <sys/standard.h>
 
 enum cpuid_vendor_id {
 CPUID_VENDOR_UNKNOWN = -1,

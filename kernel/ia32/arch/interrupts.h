@@ -7,16 +7,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <arch/registers.h>
 
 #define MAX_INTERRUPTS 256
 
-struct registers
-{
-	uint32_t ds, cr2;
-	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-	uint32_t int_no, err_code;
-	uint32_t eip, cs, eflags, useresp, ss;
-};
+//TODO defining this allows nested interrupts. needs locks and more thought
+#undef REENTRANT
 
 typedef bool (*interrupt_handler_fn)(uint32_t int_no, struct registers * regs, void * data);
 
@@ -36,6 +32,9 @@ void interrupts_handler_free(struct interrupt_handler * handler);
 void interrupts_install_handler(uint32_t int_no, interrupt_handler_fn handler_fn, void * data);
 void interrupts_uninstall_handler(uint32_t int_no, interrupt_handler_fn handler_fn);
 bool interrupts_dispatch(uint32_t int_no, struct registers * regs);
+void interrupts_cpu_enter();
+void interrupts_cpu_leave();
+bool interrupts_cpu_in_nested_isr();
 
 extern void isr0(void);
 extern void isr1(void);

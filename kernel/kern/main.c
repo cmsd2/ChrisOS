@@ -19,7 +19,7 @@
 #include <utlist.h>
 #include <assert.h>
 #include <arch/cpuid.h>
-#include <process.h>
+#include <sys/process.h>
  
 void kmain()
 {

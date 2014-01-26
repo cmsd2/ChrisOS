@@ -4,7 +4,7 @@
 #include <utils/mem.h>
 #include <utils/kprintf.h>
 #include <boot/layout.h>
-#include <standard.h>
+#include <sys/standard.h>
 #include <assert.h>
 
 struct page_directory * _kernel_page_dir;

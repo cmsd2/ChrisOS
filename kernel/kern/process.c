@@ -1,10 +1,11 @@
-#include <process.h>
+#include <sys/process.h>
 #include <utlist.h>
 #include <mm/vm_space.h>
 #include <utils/mem.h>
+#include <sys/scheduler.h>
 
 struct process *_processes;
-struct process _proc_zero;
+struct process _idle_proc;
 
 struct process *_free_processes;
 
@@ -12,6 +13,7 @@ pid_t _next_pid;
 
 // per-cpu current process pointer
 // currently only 1 cpu.
+// TODO use more cpus
 struct process *_proc_cur;
 
 struct process * current_process(void)
@@ -20,12 +22,15 @@ struct process * current_process(void)
 }
 
 struct process * process_alloc(void) {
+    struct process * p;
     if(_free_processes) {
-        struct process * p = _free_processes;
+        p = _free_processes;
         LL_DELETE(_free_processes, _free_processes);
-        return p;
+    } else {
+        p = (struct process *)kalloc_static(sizeof(struct process), 0);
     }
-    return (struct process *)kalloc_static(sizeof(struct process), 0);
+    kmemset(p, 0, sizeof(struct process));
+    return p;
 }
 
 void process_free(struct process *p) {
@@ -33,9 +38,10 @@ void process_free(struct process *p) {
 }
 
 void process_system_init(void) {
-    _proc_zero.pid = process_next_pid();
-    LL_PREPEND(_processes, &_proc_zero);
-    _proc_cur = &_proc_zero;
+    _idle_proc.pid = process_next_pid();
+    LL_PREPEND(_processes, &_idle_proc);
+    _proc_cur = &_idle_proc;
+    scheduler_add_process(&_idle_proc);
 }
 
 struct process * process_fork(struct process *p) {
@@ -59,10 +65,10 @@ void process_add_child(struct process *parent, struct process *child) {
 }
 
 void process_exit(struct process *p) {
-    // proc_zero can't exit
+    // idle_proc (pid 0) can't exit
     assert(p->pid);
 
-    // only proc_zero doesn't have a parent
+    // only idle_proc doesn't have a parent
     assert(p->parent);
 
     struct process *child, *tmp;
@@ -90,3 +96,20 @@ pid_t process_next_pid(void) {
         result = _next_pid++;
     } while(process_pid_available(result) == false);
 }
+
+void current_process_save_regs(struct registers * regs) {
+    struct process * p = current_process();
+    p->regs = *regs;
+}
+
+void current_process_restore_regs(struct registers * regs) {
+    struct process * p = current_process();
+    *regs = p->regs;
+}
+
+void process_context_switch(struct process * proc) {
+    if(_proc_cur != proc) {
+        _proc_cur = proc;
+    }
+}
+

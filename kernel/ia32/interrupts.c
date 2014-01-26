@@ -10,9 +10,14 @@
 #include <utils/mem.h>
 #include <utils/panic.h>
 #include <utlist.h>
+#include <sys/process.h>
+#include <sys/scheduler.h>
 
 struct interrupt_handler * handlers[256];
 struct interrupt_handler * _free_handlers;
+
+//TODO: needs to be per-cpu
+int _interrupt_nesting;
 
 void interrupts_init() {
 	idt_init();
@@ -78,8 +83,28 @@ void interrupts_enable() {
 	__asm__("sti");
 }
 
+void interrupts_cpu_enter() {
+    _interrupt_nesting++;
+}
+
+void interrupts_cpu_leave() {
+    _interrupt_nesting--;
+}
+
+bool interrupts_cpu_in_nested_isr() {
+    return _interrupt_nesting == 0 ? true : false;
+}
+
 void interrupts_isr_handler(struct registers regs)
 {
+    if(!interrupts_cpu_in_nested_isr())
+        current_process_save_regs(&regs);
+
+#ifdef REENTRANT
+    interrupts_cpu_enter();
+    interrupts_enable();
+#endif
+
 	kprintf("interrupt %hhu: %hhu\n", regs.int_no, regs.err_code);
 
     bool handled = interrupts_dispatch(regs.int_no, &regs);
@@ -99,6 +124,17 @@ void interrupts_isr_handler(struct registers regs)
     default:
         break;
 	}
+
+#ifdef REENTRANT
+    interrupts_disable();
+    interrupts_cpu_leave();
+#endif
+
+    if(!interrupts_cpu_in_nested_isr()) {
+        scheduler_schedule();
+
+        current_process_restore_regs(&regs);
+    }
 }
 
 void interrupts_install_handlers(void) {

@@ -115,54 +115,6 @@ kernel/fast:
 	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/CMakeFiles/kernel.dir/build.make kernel/CMakeFiles/kernel.dir/build
 .PHONY : kernel/fast
 
-main.obj: main.c.obj
-.PHONY : main.obj
-
-# target to build an object file
-main.c.obj:
-	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/CMakeFiles/kernel.dir/build.make kernel/CMakeFiles/kernel.dir/main.c.obj
-.PHONY : main.c.obj
-
-main.i: main.c.i
-.PHONY : main.i
-
-# target to preprocess a source file
-main.c.i:
-	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/CMakeFiles/kernel.dir/build.make kernel/CMakeFiles/kernel.dir/main.c.i
-.PHONY : main.c.i
-
-main.s: main.c.s
-.PHONY : main.s
-
-# target to generate assembly for a file
-main.c.s:
-	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/CMakeFiles/kernel.dir/build.make kernel/CMakeFiles/kernel.dir/main.c.s
-.PHONY : main.c.s
-
-process.obj: process.c.obj
-.PHONY : process.obj
-
-# target to build an object file
-process.c.obj:
-	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/CMakeFiles/kernel.dir/build.make kernel/CMakeFiles/kernel.dir/process.c.obj
-.PHONY : process.c.obj
-
-process.i: process.c.i
-.PHONY : process.i
-
-# target to preprocess a source file
-process.c.i:
-	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/CMakeFiles/kernel.dir/build.make kernel/CMakeFiles/kernel.dir/process.c.i
-.PHONY : process.c.i
-
-process.s: process.c.s
-.PHONY : process.s
-
-# target to generate assembly for a file
-process.c.s:
-	cd /Users/chris/Development/cmsd2/ChrisOS && $(MAKE) -f kernel/CMakeFiles/kernel.dir/build.make kernel/CMakeFiles/kernel.dir/process.c.s
-.PHONY : process.c.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -172,12 +124,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... kernel"
 	@echo "... rebuild_cache"
-	@echo "... main.obj"
-	@echo "... main.i"
-	@echo "... main.s"
-	@echo "... process.obj"
-	@echo "... process.i"
-	@echo "... process.s"
 .PHONY : help
 
 

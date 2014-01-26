@@ -167,6 +167,19 @@ utils/fast:
 .PHONY : utils/fast
 
 #=============================================================================
+# Target rules for targets named kern
+
+# Build rule for target.
+kern: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 kern
+.PHONY : kern
+
+# fast build rule for target.
+kern/fast:
+	$(MAKE) -f kernel/kern/CMakeFiles/kern.dir/build.make kernel/kern/CMakeFiles/kern.dir/build
+.PHONY : kern/fast
+
+#=============================================================================
 # Target rules for targets named ia32
 
 # Build rule for target.
@@ -192,6 +205,7 @@ help:
 	@echo "... mm"
 	@echo "... terminal"
 	@echo "... utils"
+	@echo "... kern"
 	@echo "... ia32"
 .PHONY : help
 

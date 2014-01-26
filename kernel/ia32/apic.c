@@ -10,7 +10,7 @@
 #include <arch/pit.h>
 #include <arch/ps2.h>
 #include <arch/nmi.h>
-#include <standard.h>
+#include <sys/standard.h>
 #include <arch/interrupts.h>
 #include <arch/pic.h>
 #include <utils/sort.h>
