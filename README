@@ -71,10 +71,13 @@ pic support
 pit support
 apic timer calibration
 round-robin scheduler
+outline of processes and threads
 
 Wishlist:
 
 Next:
+more complete process control blocks
+more complete kernel threads/tasks
 more complete bug-free paging
 more complete virtual memory management
 get keyboard input
@@ -82,11 +85,9 @@ framebuffer
 
 Later:
 Evaluate micro or monolithic designs.
-process control blocks
-kernel threads/tasks
 fat16
 vfs?
-scheduler
+better scheduler
 userspace
 syscalls
 serial console

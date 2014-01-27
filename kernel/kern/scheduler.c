@@ -1,68 +1,69 @@
 #include <sys/scheduler.h>
 #include <utlist.h>
+#include <sys/thread.h>
 #include <sys/process.h>
 
-struct process * _runnable_procs;
-struct process * _blocked_procs;
+struct thread * _runnable_threads;
+struct thread * _blocked_threads;
 
 // simple round-robin scheduler with no priorities
 
 void scheduler_schedule() {
-    struct process * proc = scheduler_next_process();
+    struct thread * t = scheduler_next_thread();
 
-    process_context_switch(proc);
+    process_context_switch(t);
 }
 
-struct process * scheduler_next_process() {
-    struct process * proc = _runnable_procs;
+struct thread * scheduler_next_thread() {
+    struct thread * t = _runnable_threads;
 
-    scheduler_remove_runnable_process(proc);
+    scheduler_remove_runnable_thread(t);
 
-    proc->state = running;
+    t->state = thread_running;
 
-    return proc;
+    return t;
 }
 
-void scheduler_make_runnable(struct process * proc) {
-    scheduler_remove_process(proc);
+void scheduler_make_runnable(struct thread * t) {
+    scheduler_remove_thread(t);
 
-    proc->state = runnable;
+    t->state = thread_runnable;
 
-    DL_APPEND2(_runnable_procs, proc, scheduler_proc_prev, scheduler_proc_next);
+    DL_APPEND2(_runnable_threads, t, scheduler_thread_prev, scheduler_thread_next);
 }
 
-void scheduler_make_blocked(struct process * proc) {
-    scheduler_remove_process(proc);
+void scheduler_make_blocked(struct thread * t) {
+    scheduler_remove_thread(t);
 
-    proc->state = blocked;
+    t->state = thread_blocked;
 
-    DL_APPEND2(_blocked_procs, proc, scheduler_proc_prev, scheduler_proc_next);
+    DL_APPEND2(_blocked_threads, t, scheduler_thread_prev, scheduler_thread_next);
 }
 
-void scheduler_add_process(struct process * proc) {
-    scheduler_make_runnable(proc);
+void scheduler_add_thread(struct thread * t) {
+    scheduler_make_runnable(t);
 }
 
-void scheduler_remove_process(struct process * proc) {
-    switch(proc->state) {
-    case creating:
-    case running:
+void scheduler_remove_thread(struct thread * t) {
+    switch(t->state) {
+    case thread_created:
+    case thread_running:
         break;
-    case runnable:
-        scheduler_remove_runnable_process(proc);
+    case thread_runnable:
+        scheduler_remove_runnable_thread(t);
         break;
-    case blocked:
-        scheduler_remove_blocked_process(proc);
+    case thread_blocked:
+        scheduler_remove_blocked_thread(t);
         break;
     }
 }
 
 
-void scheduler_remove_runnable_process(struct process * proc) {
-    DL_DELETE2(_runnable_procs, proc, scheduler_proc_prev, scheduler_proc_next);
+void scheduler_remove_runnable_thread(struct thread * t) {
+    DL_DELETE2(_runnable_threads, t, scheduler_thread_prev, scheduler_thread_next);
 }
 
-void scheduler_remove_blocked_process(struct process * proc) {
-    DL_DELETE2(_blocked_procs, proc, scheduler_proc_prev, scheduler_proc_next);
+void scheduler_remove_blocked_thread(struct thread * t) {
+    DL_DELETE2(_blocked_threads, t, scheduler_thread_prev, scheduler_thread_next);
 }
 

@@ -11,6 +11,7 @@
 #include <utils/panic.h>
 #include <utlist.h>
 #include <sys/process.h>
+#include <sys/thread.h>
 #include <sys/scheduler.h>
 
 struct interrupt_handler * handlers[256];
@@ -98,7 +99,7 @@ bool interrupts_cpu_in_nested_isr() {
 void interrupts_isr_handler(struct registers regs)
 {
     if(!interrupts_cpu_in_nested_isr())
-        current_process_save_regs(&regs);
+        current_thread_save_regs(&regs);
 
 #ifdef REENTRANT
     interrupts_cpu_enter();
@@ -133,7 +134,7 @@ void interrupts_isr_handler(struct registers regs)
     if(!interrupts_cpu_in_nested_isr()) {
         scheduler_schedule();
 
-        current_process_restore_regs(&regs);
+        current_thread_restore_regs(&regs);
     }
 }
 

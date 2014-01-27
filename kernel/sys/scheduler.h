@@ -1,23 +1,25 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-// select a runnable process and switch to it
+#include <sys/thread.h>
+
+// select a runnable thread and switch to it
 void scheduler_schedule();
 
-// select a runnable process
-struct process * scheduler_next_process();
+// select a runnable thread 
+struct thread * scheduler_next_thread();
 
-// mark a process as runnable
-void scheduler_make_runnable(struct process * proc);
+// mark a thread as runnable
+void scheduler_make_runnable(struct thread * t);
 
-// mark a process as blocked
-void scheduler_make_blocked(struct process * proc);
+// mark a thread as blocked
+void scheduler_make_blocked(struct thread * t);
 
-// add a new process, initially runnable
-void scheduler_add_process(struct process * proc);
+// add a new thread, initially runnable
+void scheduler_add_thread(struct thread * t);
 
-void scheduler_remove_process(struct process * proc);
-void scheduler_remove_runnable_process(struct process * proc);
-void scheduler_remove_blocked_process(struct process * proc);
+void scheduler_remove_thread(struct thread * t);
+void scheduler_remove_runnable_thread(struct thread * t);
+void scheduler_remove_blocked_thread(struct thread * t);
 
 #endif

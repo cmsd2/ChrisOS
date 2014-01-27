@@ -3,9 +3,10 @@
 #include <mm/vm_space.h>
 #include <utils/mem.h>
 #include <sys/scheduler.h>
+#include <sys/thread.h>
 
 struct process *_processes;
-struct process _idle_proc;
+struct process _kernel_proc;
 
 struct process *_free_processes;
 
@@ -14,11 +15,11 @@ pid_t _next_pid;
 // per-cpu current process pointer
 // currently only 1 cpu.
 // TODO use more cpus
-struct process *_proc_cur;
+struct process *_current_proc;
 
 struct process * current_process(void)
 {
-    return _proc_cur;
+    return _current_proc;
 }
 
 struct process * process_alloc(void) {
@@ -38,10 +39,21 @@ void process_free(struct process *p) {
 }
 
 void process_system_init(void) {
-    _idle_proc.pid = process_next_pid();
-    LL_PREPEND(_processes, &_idle_proc);
-    _proc_cur = &_idle_proc;
-    scheduler_add_process(&_idle_proc);
+    _kernel_proc.pid = process_next_pid();
+    process_add_process(&_kernel_proc);
+
+    _current_proc = &_kernel_proc;
+    struct thread *t = thread_spawn(&_kernel_proc);
+    //TODO setup thread entry point and stack
+    //scheduler_add_thread(t);
+}
+
+void process_add_process(struct process *p) {
+    LL_PREPEND(_processes, p);
+}
+
+void process_remove_process(struct process *p) {
+    LL_DELETE(_processes, p);
 }
 
 struct process * process_fork(struct process *p) {
@@ -54,7 +66,7 @@ struct process * process_fork(struct process *p) {
 
     process_add_child(p, child);
 
-    LL_PREPEND(_processes, child);
+    process_add_process(child);
 
     return child;
 }
@@ -65,10 +77,10 @@ void process_add_child(struct process *parent, struct process *child) {
 }
 
 void process_exit(struct process *p) {
-    // idle_proc (pid 0) can't exit
+    // kernel_proc (pid 0) can't exit
     assert(p->pid);
 
-    // only idle_proc doesn't have a parent
+    // only kernel_proc doesn't have a parent
     assert(p->parent);
 
     struct process *child, *tmp;
@@ -97,19 +109,22 @@ pid_t process_next_pid(void) {
     } while(process_pid_available(result) == false);
 }
 
-void current_process_save_regs(struct registers * regs) {
-    struct process * p = current_process();
-    p->regs = *regs;
-}
+void process_context_switch(struct thread * t) {
+    struct process *proc = t->proc;
 
-void current_process_restore_regs(struct registers * regs) {
-    struct process * p = current_process();
-    *regs = p->regs;
-}
-
-void process_context_switch(struct process * proc) {
-    if(_proc_cur != proc) {
-        _proc_cur = proc;
+    if(_current_proc != proc) {
+        _current_proc = proc;
     }
+
+    thread_context_switch(t);
+}
+
+void process_add_thread(struct process *p, struct thread *t) {
+    t->proc = p;
+    LL_PREPEND(p->threads, t);
+}
+
+void process_remove_thread(struct process *p, struct thread *t) {
+    LL_DELETE(p->threads, t);
 }
 

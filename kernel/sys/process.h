@@ -7,34 +7,31 @@
 typedef unsigned long pid_t;
 
 enum process_state {
-    creating = 0,
-    running,
-    runnable,
-    blocked
+    process_created = 0,
+    process_alive,
+    process_dead
 };
+
+struct thread;
 
 struct process {
     struct process *next;
+    struct thread *threads;
 
     struct process *parent;
     struct process *children;
     struct process *sibling;
 
-    // for scheduler's list of runnable/blocked processes
-    struct process *scheduler_proc_next;
-    struct process *scheduler_proc_prev;
-
     pid_t pid;
     struct vm_space vm_space;
 
-    // for resume after interrupt
-    struct registers regs;
-
     enum process_state state;
+
+    int exit_code;
 };
 
 extern struct process *_processes;
-extern struct process _proc_zero;
+extern struct process _kernel_proc;
 
 // returns the process running on the current cpu
 struct process * current_process(void);
@@ -44,6 +41,9 @@ void process_free(struct process *p);
 
 void process_system_init(void);
 
+void process_add_process(struct process *p);
+void process_remove_process(struct process *p);
+
 struct process * process_fork(struct process *p);
 void process_add_child(struct process *parent, struct process *child);
 
@@ -51,9 +51,9 @@ void process_exit(struct process *p);
 
 pid_t process_next_pid(void);
 
-void current_process_save_regs(struct registers * regs);
-void current_process_restore_regs(struct registers * regs);
+void process_context_switch(struct thread * t);
 
-void process_context_switch(struct process * proc);
+void process_add_thread(struct process *p, struct thread *t);
+void process_remove_thread(struct process *p, struct thread *t);
 
 #endif
