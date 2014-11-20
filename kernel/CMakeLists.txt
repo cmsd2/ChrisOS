@@ -1,13 +1,13 @@
 
-add_subdirectory(boot)
-add_subdirectory(mm)
-add_subdirectory(terminal)
-add_subdirectory(utils)
-add_subdirectory(kern)
-add_subdirectory("${ARCH}")
+add_subdirectory(boot "${CMAKE_CURRENT_BINARY_DIR}/boot")
+add_subdirectory(mm "${CMAKE_CURRENT_BINARY_DIR}/mm")
+add_subdirectory(terminal "${CMAKE_CURRENT_BINARY_DIR}/terminal")
+add_subdirectory(utils "${CMAKE_CURRENT_BINARY_DIR}/utils")
+add_subdirectory(kern "${CMAKE_CURRENT_BINARY_DIR}/kern")
+add_subdirectory("${ARCH}" "${CMAKE_CURRENT_BINARY_DIR}/${ARCH}")
 
 set(CMAKE_C_FLAGS "-D_KERNEL ${ARCH_C_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${ARCH_C_FLAGS} -T ${PROJECT_SOURCE_DIR}/${PLATFORM_LINKER_SCRIPT}")
+set(CMAKE_EXE_LINKER_FLAGS "${ARCH_C_FLAGS} -T ${PLATFORM_LINKER_SCRIPT}")
 
 include_directories("${PROJECT_SOURCE_DIR}/kernel")
 

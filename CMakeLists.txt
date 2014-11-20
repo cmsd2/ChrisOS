@@ -3,7 +3,7 @@ project (ChrisOS C ASM)
 
 enable_language(ASM-ATT)
 
-include("common.cmake")
+include("${PROJECT_SOURCE_DIR}/common.cmake")
 
 load_profile("ia32" "pc")
 
@@ -12,8 +12,9 @@ configure_file (
     "${PROJECT_BINARY_DIR}/include/ChrisOS_config.h"
 )
 
+include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${PROJECT_BINARY_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/libs/uthash/src")
 
-add_subdirectory(kernel)
+add_subdirectory(kernel "${CMAKE_CURRENT_BINARY_DIR}/kernel")
 
