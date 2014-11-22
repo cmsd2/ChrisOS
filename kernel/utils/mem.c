@@ -90,7 +90,6 @@ unsigned int log2_64(uint64_t n) {
 }
 
 void * kmemset(void * addr, uint8_t value, size_t len) {
-
 	uint8_t * b_addr;
 	uint8_t * word_addr;
 	unsigned long word_value = FILL_LONG_WITH_BYTE(value);
@@ -119,6 +118,32 @@ void * kmemset(void * addr, uint8_t value, size_t len) {
 	}
 
 	return addr;
+}
+
+void * kmemcpy(void * dest, void * src, size_t len) {
+    //TODO optimise memcpy: don't use memmove
+    return kmemmove(dest, src, len);
+}
+
+void * kmemmove(void * dest, void * src, size_t len) {
+    //TODO optimise memmove: don't use single-byte operations
+    if(dest < src) {
+        kmemcpy_b_fwd(dest, src, len);
+    } else {
+        kmemcpy_b_rev(dest, src, len);
+    }
+}
+
+void kmemcpy_b_fwd(uint8_t * dest, uint8_t * src, size_t len) {
+    for(size_t i = 0; i < len; i++) {
+		dest[i] = src[i];
+	}
+}
+
+void kmemcpy_b_rev(uint8_t * dest, uint8_t * src, size_t len) {
+    for(size_t i = len - 1; i >= 0; i--) {
+		dest[i] = src[i];
+	}
 }
 
 uintptr_t kalloc_static(size_t size, size_t align) {

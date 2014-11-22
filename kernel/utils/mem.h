@@ -37,5 +37,10 @@ uintptr_t page_align(uintptr_t addr);
 uintptr_t page_align_down(uintptr_t addr);
 
 void * kmemset(void * addr, uint8_t value, size_t len);
+void * kmemcpy(void * dest, void * src, size_t len);
+void * kmemmove(void * dest, void * src, size_t len);
+
+void kmemcpy_b_fwd(uint8_t * dest, uint8_t * src, size_t len);
+void kmemcpy_b_rev(uint8_t * dest, uint8_t * src, size_t len);
 
 #endif
