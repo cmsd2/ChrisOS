@@ -139,7 +139,7 @@ void * kmem_alloc(size_t size) {
     uintptr_t addr = kmem_vm_alloc(aligned_size);
     size_t num_pages = aligned_size / KMEM_PAGE_SIZE;
     if(addr) {
-        kprintf("allocated vm at %lx\n", addr);
+        kprintf("allocated %ld vm pages of %ld bytes at %lx\n", num_pages, KMEM_PAGE_SIZE, addr);
         bool ok = kmem_pages_alloc(0, addr, num_pages, true);
         //TODO create mapping from vm address range to allocated physical pages
         if(!ok) {
@@ -152,6 +152,7 @@ void * kmem_alloc(size_t size) {
 }
 
 void kmem_free(void *addr) {
+    // todo: implement kmem_free
 }
 
 void kmem_print_info() {
