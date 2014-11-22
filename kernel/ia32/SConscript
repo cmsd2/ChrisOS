@@ -1,0 +1,5 @@
+Import('env')
+
+ia32_lib = env.Library('ia32', Glob('*.c') + Glob('*.S'))
+
+Return('ia32_lib')

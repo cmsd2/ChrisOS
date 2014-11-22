@@ -1,0 +1,5 @@
+Import('env')
+
+boot_lib = env.Library('boot', Glob('*.c'))
+
+Return('boot_lib')

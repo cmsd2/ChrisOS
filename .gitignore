@@ -4,6 +4,7 @@ tools/*.asc
 tools/*.sig
 *.o
 *.a
+*.pyc
 kernel.bin
 *.img
 *.iso

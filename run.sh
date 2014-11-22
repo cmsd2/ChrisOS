@@ -7,4 +7,4 @@ if [ x"$1" == x"debug" ]; then
 	DEBUG_OPTS="-s -S"
 fi
 
-qemu-system-i386 -cpu core2duo -d guest_errors $DEBUG_OPTS -kernel kernel/kernel
+qemu-system-i386 -cpu core2duo -d guest_errors $DEBUG_OPTS -kernel kernel/kernel.bin

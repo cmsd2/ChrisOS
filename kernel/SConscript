@@ -1,0 +1,20 @@
+Import('env')
+
+project_root = Dir('#').abspath
+env = env.Clone(PROJECT_ROOT = project_root,
+    CFLAGS = env['CFLAGS'] + ' -D_KERNEL -I$PROJECT_ROOT/kernel/$ARCH -I$PROJECT_ROOT/kernel -I$PROJECT_ROOT/include -I$PROJECT_ROOT/libs/uthash/src',
+    LINKFLAGS = env['LINKFLAGS'] + ' -T' + env['LINKER_SCRIPT'])
+
+Export('env')
+
+ia32_lib = SConscript(env['ARCH'] + '/SConscript')
+boot_lib = SConscript('boot/SConscript')
+mm_lib = SConscript('mm/SConscript')
+utils_lib = SConscript('utils/SConscript')
+kern_lib = SConscript('kern/SConscript')
+terminal_lib = SConscript('terminal/SConscript')
+
+kenv = env.Clone(LIBS = kern_lib + boot_lib + utils_lib + mm_lib + ia32_lib + terminal_lib + ['gcc'])
+kenv['_LIBFLAGS'] = '-Wl,--start-group ' + kenv['_LIBFLAGS'] + ' -Wl,--end-group'
+kenv.Program('kernel.bin', [])
+Depends('kernel.bin', kenv['LINKER_SCRIPT'])

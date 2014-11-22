@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cp kernel/kernel iso/boot/kernel.bin
+cp kernel/kernel.bin iso/boot/kernel.bin
 
 mkisofs -o boot.iso -b boot/isolinux/isolinux.bin \
   -c boot/isolinux/isolinux.cat \

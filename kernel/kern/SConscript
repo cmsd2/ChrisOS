@@ -1,0 +1,5 @@
+Import('env')
+
+kern_lib = env.Library('kern', Glob('*.c'))
+
+Return('kern_lib')
