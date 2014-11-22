@@ -44,7 +44,7 @@ void load_multiboot_info(void) {
 	if(_multiboot_info.flags & MULTIBOOT_INFO_MODS) {
 		_multiboot_info.mods_count = _bootstrap_info->mods_count;
 		_multiboot_info.mods_addr = _bootstrap_info->mods_addr + _kernel_layout.segment_start;
-		struct multiboot_mod_list * mods = (struct multiboot_mod_list *) _multiboot_info.mods_addr;
+		struct multiboot_mod_list * mods = (struct multiboot_mod_list *) (uintptr_t) _multiboot_info.mods_addr;
 		for(unsigned int i = 0; i < _multiboot_info.mods_count; i++) {
 			mods[i].mod_start += _kernel_layout.segment_start;
 			mods[i].mod_end += _kernel_layout.segment_start;
@@ -179,7 +179,7 @@ void multiboot_print_cmdline_info(void) {
 void multiboot_print_mods_info(void) {
 	kprintf("mods_count=%u mods_addr=0x%x\n", _multiboot_info.mods_count, _multiboot_info.mods_addr);
 
-	struct multiboot_mod_list * mod = (struct multiboot_mod_list *) _multiboot_info.mods_addr;
+	struct multiboot_mod_list * mod = (struct multiboot_mod_list *) (uintptr_t) _multiboot_info.mods_addr;
 	for(unsigned int i = 0; i < _multiboot_info.mods_count; i++) {
 		kprintf("mod_%d_start=0x%x mod_%d_end=0x%x mod_%d_str=%s\n",
 			i, mod[i].mod_start,
