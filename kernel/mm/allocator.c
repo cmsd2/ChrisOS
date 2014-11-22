@@ -87,9 +87,9 @@ void allocator_print_map_info(struct allocator_map * map) {
         r_num++;
     }
     if(available) {
-        fragmentation = 100 - largest_block / (available / 100);
+        fragmentation = 100 * (1 - (float)largest_block / available);
     }
-    kprintf("allocator: available=%lx fragmentation=%d%%\n", available, fragmentation);
+    kprintf("allocator: available=%lx largest_block=%lx fragmentation=%d%%\n", available, largest_block, fragmentation);
 }
 
 struct allocator_region * allocator_region_alloc() {
