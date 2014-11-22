@@ -9,6 +9,7 @@
 #include <arch/paging.h>
 #include <mm/allocator.h>
 #include <mm/kmem.h>
+#include <mm/malloc.h>
 #include <arch/gdt.h> //TODO: this is too arch specific
 #include <arch/pic.h>
 #include <arch/apic.h>
@@ -45,12 +46,13 @@ void kmain()
 
 	interrupts_enable();
 
-
     kmem_init();
 
 	multiboot_copy_mem_map_to_allocator();
 
     kmem_load_layout();
+
+    kmalloc_init();
 
 	kmem_print_info();
 
@@ -60,8 +62,6 @@ void kmain()
 	__asm__("int $0x3");
 	__asm__("int $0x4");
  
-	kprintf("Hello, kernel world!\n");
-
 	assert(cpuid_available());
 	assert(msrs_available());
 
@@ -70,4 +70,19 @@ void kmain()
 	//cpuid_print_info(&cpu);
 
 	apic_init(&cpu);
+
+    size_t size = 4096 * 100;
+    void * mem = kalloc(size);
+    kprintf("Alloc'd at addr=0x%lx\n", mem);
+    kmemset(mem, 0xff, size);
+    kfree(mem);
+    kprintf("Freed mem at addr=0x%lx\n", mem);
+    mem = kalloc(4096 * 10);
+    void * mem2 = kalloc(4096);
+    kfree(mem);
+    kmalloc_print_info();
+    kfree(mem2);
+    kmalloc_print_info();
+
+	kprintf("Hello, kernel world!\n");
 }
