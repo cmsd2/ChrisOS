@@ -129,7 +129,7 @@ void paging_unmap(struct page_directory * ptd, uintptr_t vaddr, size_t size) {
 
 		cur_pages = MIN(pages, PT_ENTRIES - pt_id);
 		
-        kprintf("unmapping %u pages at vaddr 0x%x\n", cur_pages, vaddr);
+        //kprintf("unmapping %u pages at vaddr 0x%x\n", cur_pages, vaddr);
 		
         paging_pt_unmap(pt, vaddr, cur_pages);
 
@@ -193,7 +193,7 @@ void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, u
 
 		cur_pages = MIN(pages, PT_ENTRIES - pt_id);
 
-		kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
+		//kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
 
 		paging_pt_map(pt, base_addr, cur_pages, flags);
 
