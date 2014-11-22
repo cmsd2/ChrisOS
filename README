@@ -36,15 +36,18 @@ All other files are my own work, see the license in this directory.
 Getting Started:
 
 For compiling, start by creating a cross compiler.
+Currently I'm using just gcc and friends, targeting 32bit x86 only.
 See tools/toolchain.sh
 
-Then edit the kernel/ia32/toolchain.cmake to set the location,
-and run gen.sh to generate/update the makefiles.
+Then edit the tools/ia32.py to set the location and target triple.
+I've used i686-pc-elf when building gcc (and for any tools which use llvm,
+i'll use i686-linux-gnu for now).
 
 Run make to build.
 
-Run run.sh to test in qemu,
+Run run.sh to test in qemu (it has code for direct multiboot or cdrom iso boot)
 and gdb.sh to attach remotely gdb to running qemu.
+mkiso.sh builds a bootable cdrom for use with qemu, virtualbox, vmware etc.
 
 
 
@@ -63,7 +66,7 @@ jump to higher half
 handle interrupts
 printf to 80x24 vga screen
 basic buggy paging
-almost useful virtual memory management
+iffy virtual memory management
 basic local apic support
 model specific register support
 cpuid support
@@ -76,6 +79,7 @@ outline of processes and threads
 Wishlist:
 
 Next:
+rust support
 more complete process control blocks
 more complete kernel threads/tasks
 more complete bug-free paging
