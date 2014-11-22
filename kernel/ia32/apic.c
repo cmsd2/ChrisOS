@@ -56,7 +56,6 @@ void apic_init(const struct cpuid_info * cpu) {
     sivr.fields.spurious_vector = 39;
     apic_write_reg_32(APIC_REG_SIVR, sivr.value);
 
-    for(int i = 0; i < 2; i++)
     apic_timer_init();
 }
 
@@ -82,7 +81,7 @@ uint32_t apic_measure_timer_freq() {
     unsigned int test_sleep_freq = 10; // Hz
     unsigned int pit_freq = 1193180; // Hz
     unsigned int test_sleep_time = pit_freq / test_sleep_freq;
-    kprintf("test sleep time is %d\n", test_sleep_time);
+    //kprintf("test sleep time is %d\n", test_sleep_time);
 
     unsigned int start_count = -1;
 
@@ -101,7 +100,7 @@ uint32_t apic_measure_timer_freq() {
     unsigned int ticks = start_count - curcount;
     uint32_t cpu_bus_freq = ticks * timer_div * test_sleep_freq;
     //ticks_per_quantum = cpu_bus_freq / quantum / timer_div;
-    kprintf("done initialising timer. freq=%u\n", cpu_bus_freq);
+    //kprintf("done initialising timer. freq=%u\n", cpu_bus_freq);
 
     return cpu_bus_freq;
 }

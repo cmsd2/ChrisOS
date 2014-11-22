@@ -52,7 +52,7 @@ void kmain()
 
     kmem_load_layout();
 
-	//kmem_print_info();
+	kmem_print_info();
 
     process_system_init();
 

@@ -40,11 +40,14 @@ void kern_pm_alloc_region_add(mm_ptr_t start, size_t size, enum alloc_region_fla
 void kmem_load_layout(void);
 
 // allocate a page from available physical memory and wire it to the address given
-bool kmem_page_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr);
+bool kmem_page_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, bool flush);
+void kmem_page_free(vm_ptr_t vm_addr, enum alloc_region_flags flags, bool flush);
 
-bool kmem_pages_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, size_t num_pages);
+void kmem_pages_list_free(struct kmem_page_list * page_list);
 
-void kmem_page_free(uintptr_t page, enum alloc_region_flags flags);
+bool kmem_pages_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, size_t num_pages, bool flush);
+void kmem_pages_free(enum alloc_region_flags flags, vm_ptr_t vm_addr, size_t num_pages, bool flush);
+
 
 // allocate a region of naked kernel virtual address space
 uintptr_t kmem_vm_alloc(size_t size);

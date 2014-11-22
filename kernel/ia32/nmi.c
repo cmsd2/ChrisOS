@@ -12,8 +12,8 @@ void nmi_timer_2_spinwait() {
     while(!(inb(NMI_STATUS_AND_CONTROL) & NMI_SC_TMR2_OUT_STS)) {
         i++;
     }
-    kprintf("after spinwait: nmi tmr2 status = %hhx\n", inb(NMI_STATUS_AND_CONTROL));
-    kprintf("%d loops\n", i);
+    //kprintf("after spinwait: nmi tmr2 status = %hhx\n", inb(NMI_STATUS_AND_CONTROL));
+    //kprintf("%d loops\n", i);
 }
 
 void nmi_reenable_timer_2() {
