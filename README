@@ -76,6 +76,7 @@ pit support
 apic timer calibration
 round-robin scheduler
 outline of processes and threads
+basic uart driver
 
 Wishlist:
 
@@ -95,7 +96,7 @@ vfs?
 better scheduler
 userspace
 syscalls
-serial console
+serial port driver that doesn't spinwait
 
 Much later:
 plug and play
