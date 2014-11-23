@@ -213,6 +213,7 @@ union uart_modem_status_reg {
 
 void uart_init(void);
 void uart_enable(enum uart_port port);
+uint8_t uart_read_reg(enum uart_port port, enum uart_port_register reg);
 void uart_write_reg(enum uart_port port, enum uart_port_register reg, uint8_t value);
 uint16_t uart_calc_uart_divisor(uint16_t desired_baud);
 void uart_write_baud(enum uart_port port, uint16_t baud);
@@ -220,5 +221,7 @@ bool uart_is_transmit_fifo_empty(enum uart_port port);
 void uart_transmit_fifo_spinwait(enum uart_port port);
 void uart_fingerprint_uart(enum uart_port port, struct uart_caps * result);
 void uart_print_info(struct uart_caps * caps);
+void uart_putc_sync(enum uart_port port, char c);
+void uart_puts_sync(enum uart_port port, const char * s);
 
 #endif

@@ -48,6 +48,10 @@ void kmain()
 
 	interrupts_enable();
 
+    uart_init();
+    uart_enable(UART_COM1);
+    terminal_enable_serial_console(UART_COM1);
+
     kmem_init();
 
 	multiboot_copy_mem_map_to_allocator();
@@ -55,6 +59,10 @@ void kmain()
     kmem_load_layout();
 
     kmalloc_init();
+
+    struct uart_caps caps;
+    uart_fingerprint_uart(UART_COM1, &caps);
+    uart_print_info(&caps);
 
 	kmem_print_info();
 
@@ -86,16 +94,11 @@ void kmain()
     free(mem2);
     kmalloc_print_info();
 
-    uart_init();
-    struct uart_caps caps;
-    uart_fingerprint_uart(UART_COM1, &caps);
-    uart_print_info(&caps);
-    uart_enable(UART_COM1);
-
     multiboot_print_cmdline_info();
 
     cmdline_parse(multiboot_get_cmdline());
     cmdline_print_info();
 
+    uart_puts_sync(UART_COM1, "Hello, serial port!\n");
 	kprintf("Hello, kernel world!\n");
 }

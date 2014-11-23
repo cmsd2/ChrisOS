@@ -68,7 +68,7 @@ void uart_write_baud(enum uart_port port, uint16_t baud) {
 bool uart_is_transmit_fifo_empty(enum uart_port port) {
     union uart_line_status_reg status_reg;
     status_reg.value = uart_read_reg(port, UART_LINE_STATUS_REG);
-    return status_reg.fields.thr_empty == 0;
+    return status_reg.fields.thr_empty == 1;
 }
 
 void uart_transmit_fifo_spinwait(enum uart_port port) {
@@ -125,6 +125,21 @@ void uart_fingerprint_uart(enum uart_port port, struct uart_caps * result) {
         } else {
             result->model = uart_8250;
         }
+    }
+}
+
+void uart_putc_sync(enum uart_port port, char c) {
+    uart_transmit_fifo_spinwait(port);
+
+    outb(port, c);
+}
+
+void uart_puts_sync(enum uart_port port, const char * s) {
+    char c = *s;
+    while(c) {
+        uart_putc_sync(port, c);
+        s++;
+        c = *s;
     }
 }
 

@@ -1,6 +1,7 @@
 #include <terminal/terminal.h>
 #include <utils/string.h>
 #include <boot/layout.h>
+#include <arch/uart.h>
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 24;
@@ -9,6 +10,15 @@ size_t terminal_row;
 size_t terminal_column;
 uint8_t terminal_color;
 uint16_t* terminal_buffer;
+uint16_t serial_console_port;
+
+void terminal_enable_serial_console(uint16_t port) {
+    serial_console_port = port;
+}
+
+void terminal_disable_serial_console() {
+    serial_console_port = 0;
+}
  
 uint8_t make_color(enum vga_color fg, enum vga_color bg)
 {
@@ -75,6 +85,10 @@ void terminal_putchar(char c)
 			terminal_row = 0;
 		}
 	}
+
+    if(serial_console_port) {
+        uart_putc_sync(serial_console_port, c);
+    }
 }
  
 void terminal_writestring(const char* data)
