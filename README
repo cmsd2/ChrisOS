@@ -56,6 +56,7 @@ interrupt handling is messy
 paging code is too complicated
 no slab allocators yet
 too reliant on kprintf, and tiny 80x24 vga non-scrolling display :(
+rust support looks easy, but i'm blocked on issue #16259 and maybe #18146
 
 
 Features done:
@@ -170,3 +171,39 @@ check instead of flags check when freeing.
 
 todo: make sure we track used memory adequately. 
 will become necessary when we're forking, paging to disk, and mmap'ing
+
+todo: process memory
+kernel threads use the kernel process's address space, which allocates areas above 3GB
+user processes have their own address space, which allocate areas between 0GB and 3GB
+each thread gets its own stack
+each process needs an initial amount of heap large enough to hold the program binary code+data
+except the kernel process which runs code directly from the kernel area.
+
+create kernel process:
+1. no special process setup. initialise vm space.
+2. create main kernel thread. allocate stack page(s).
+3. initialise registers and set EIP to entry point, ESP to stack, code and data segments set for ring 0
+4. additional threads copy initial thread, but separate stack and entry point
+
+fork kernel process:
+1. duplicate address space, add to page reference count
+2. duplicate threads, copy stack, copy registers.
+
+exec user process:
+1. create new address space
+2. destroy threads
+3. create new main thread with new stack and registers. set code and data segments for ring 3
+
+exit user process:
+1. set exit code
+2. mark as dead
+3. signal parent SIGCHLD
+4. reparent surviving child processes
+5. remove dead child processes
+6. destroy threads
+7. destroy address space, decrementing page reference counts
+8. close file handles etc.
+
+collect process (cleanup dead process):
+1. remove process from data structures
+
