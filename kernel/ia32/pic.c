@@ -25,43 +25,43 @@ void pic_map_irqs(unsigned int irq_base_1, unsigned int irq_base_2) {
     mask_1 = inb(PIC1_DATA);
     mask_2 = inb(PIC2_DATA);
 
-    outb(ICW1_ICW1 | ICW1_ICW4_NEEDED, PIC1);
+    outb(PIC1, ICW1_ICW1 | ICW1_ICW4_NEEDED);
     io_wait();
-    outb(ICW1_ICW1 | ICW1_ICW4_NEEDED, PIC2);
+    outb(PIC2, ICW1_ICW1 | ICW1_ICW4_NEEDED);
     io_wait();
-    outb(irq_base_1, PIC1_DATA);
+    outb(PIC1_DATA, irq_base_1);
     io_wait();
-    outb(irq_base_2, PIC2_DATA);
+    outb(PIC2_DATA, irq_base_2);
     io_wait();
-    outb(4, PIC1_DATA); // irq2 is the slave
+    outb(PIC1_DATA, 4); // irq2 is the slave
     io_wait();
-    outb(2, PIC2_DATA); // slave id
+    outb(PIC2_DATA, 2); // slave id
     io_wait();
 
-    outb(ICW4_8086_MODE, PIC1_DATA);
+    outb(PIC1_DATA, ICW4_8086_MODE);
     io_wait();
-    outb(ICW4_8086_MODE, PIC2_DATA);
+    outb(PIC2_DATA, ICW4_8086_MODE);
     io_wait();
 
     // restore masks
-    outb(mask_1, PIC1_DATA);
+    outb(PIC1_DATA, mask_1);
     io_wait();
-    outb(mask_2, PIC2_DATA);
+    outb(PIC2_DATA, mask_2);
     io_wait();
 }
 
 // masks all interrupts
 void pic_mask_all(void) {
-    outb(0xff, PIC1_DATA);
-    outb(0xff, PIC2_DATA);
+    outb(PIC1_DATA, 0xff);
+    outb(PIC2_DATA, 0xff);
 }
 
 void pic_eoi(unsigned char irq) {
     if(irq >= PIC_MAX_IRQS) {
-        outb(PIC_EOI, PIC2);
+        outb(PIC2, PIC_EOI);
     }
     //pics are chained, so no else
-    outb(PIC_EOI, PIC1);
+    outb(PIC1, PIC_EOI);
 }
 
 unsigned short pic_data_port(enum pic _pic) {
@@ -99,7 +99,7 @@ unsigned char pic_get_mask(enum pic _pic) {
 void pic_set_mask(enum pic _pic, unsigned char value) {
     unsigned short port = pic_data_port(_pic);
 
-    outb(value, port);
+    outb(port, value);
     io_wait();
 }
 
@@ -109,7 +109,7 @@ void pic_mask(unsigned char irq) {
     unsigned char value = inb(port);
 
     value |= (1 << pic_local_irq);
-    outb(value, port);
+    outb(port, value);
     io_wait();
 }
 
@@ -118,7 +118,7 @@ void pic_unmask(unsigned char irq) {
     unsigned char value = inb(port);
 
     value &= ~(1 << irq);
-    outb(value, port);
+    outb(port, value);
     io_wait();
 }
 

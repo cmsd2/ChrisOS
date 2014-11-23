@@ -17,14 +17,14 @@ void pit_set_mode(enum pit_select_channel channel, enum pit_access_mode access_m
     mode_reg.fields.select_channel = channel;
 
     //kprintf("writing %hhx to pit port %hx\n", mode_reg.value, port);
-    outb(mode_reg.value, port);
+    outb(port, mode_reg.value);
 }
 
 void pit_set_counter(enum pit_select_channel channel, uint8_t value) {
     unsigned short port = pit_io_port(channel);
 
     //kprintf("setting counter to %hhx on port %hx\n", value, port);
-    outb(value, port);
+    outb(port, value);
 }
 
 unsigned short pit_io_port(enum pit_select_channel channel) {

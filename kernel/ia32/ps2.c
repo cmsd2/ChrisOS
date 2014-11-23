@@ -10,6 +10,6 @@ uint8_t ps2_read_status() {
 }
 
 void ps2_write_command(uint8_t command) {
-    outb(command, PS2_SC_PORT);
+    outb(PS2_SC_PORT, command);
 }
 

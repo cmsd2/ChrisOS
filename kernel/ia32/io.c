@@ -7,10 +7,10 @@ unsigned char inb(unsigned short int port) {
     return value;
 }
 
-void outb(unsigned char value, unsigned short int port) {
+void outb(unsigned short int port, unsigned char value) {
     __asm__ volatile("outb %1, %0;" : : "Nd"(port), "a"(value));
 }
 
 void io_wait() {
-    __asm__ volatile( "outb %%al, $0x80" : : "a"(0) );
+    __asm__ volatile("outb %%al, $0x80" : : "a"(0));
 }
