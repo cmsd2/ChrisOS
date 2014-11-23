@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <arch/cpuid.h>
 #include <sys/process.h>
+#include <arch/uart.h>
  
 void kmain()
 {
@@ -83,6 +84,12 @@ void kmain()
     kmalloc_print_info();
     kfree(mem2);
     kmalloc_print_info();
+
+    uart_init();
+    struct uart_caps caps;
+    uart_fingerprint_uart(UART_COM1, &caps);
+    uart_print_info(&caps);
+    uart_enable(UART_COM1);
 
 	kprintf("Hello, kernel world!\n");
 }

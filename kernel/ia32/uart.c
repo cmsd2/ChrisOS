@@ -1,6 +1,10 @@
 #include <arch/uart.h>
 #include <utils/kprintf.h>
 #include <sys/io.h>
+#include <sys/standard.h>
+#include <utils/string.h>
+
+char * uart_models[] = {"unknown", "8250", "16450", "16550", "16550A", "16750", "unsupported"};
 
 void uart_init() {
 }
@@ -71,6 +75,56 @@ void uart_transmit_fifo_spinwait(enum uart_port port) {
     int i = 0;
     while(!uart_is_transmit_fifo_empty(port)) {
         i++;
+    }
+}
+
+void uart_print_info(struct uart_caps * caps) {
+    char * model_name;
+    model_name = uart_models[MIN((unsigned)uart_unsupported, (unsigned)caps->model)];
+    kprintf("uart info model=%s has_fifo=%s scratch_reg=%s rx_size=%hhd tx_size=%hhd\n", model_name, BOOL_TO_STR(caps->has_fifo), BOOL_TO_STR(caps->scratch_reg), caps->receive_fifo_size, caps->transmit_fifo_size);
+}
+
+void uart_fingerprint_uart(enum uart_port port, struct uart_caps * result) {
+    union uart_fifo_ctrl_reg fifo_ctrl = { .value = 0 };
+    fifo_ctrl.fields.enable = 1;
+    fifo_ctrl.fields.clear_receive_fifo = 1;
+    fifo_ctrl.fields.clear_transmit_fifo = 1;
+    uart_write_reg(port, UART_FIFO_CTRL_REG, fifo_ctrl.value);
+
+    uint8_t scratch = 0x2a;
+    uart_write_reg(port, UART_SCRATCH_REG, scratch);
+    if(scratch == uart_read_reg(port, UART_SCRATCH_REG)) {
+        result->scratch_reg = true;
+    } else {
+        result->scratch_reg = false;
+    }
+
+    union uart_int_id_reg int_id;
+    int_id.value = uart_read_reg(port, UART_INTERRUPT_IDENT_REG);
+
+    if(int_id.fields.fifo_status == fifo_enabled) {
+        result->has_fifo = true;
+        if(int_id.fields.sixty_four_byte_buffer_enabled) {
+            result->model = uart_16750;
+            result->receive_fifo_size = 64;
+            result->transmit_fifo_size = 64;
+        } else {
+            result->model = uart_16550A;
+            result->receive_fifo_size = 16;
+            result->transmit_fifo_size = 16;
+        }
+    } else if(int_id.fields.fifo_status == fifo_reserved_condition) {
+        result->model = uart_16550;
+        result->has_fifo = true;
+        result->receive_fifo_size = 1;
+        result->transmit_fifo_size = 1;
+    } else {
+        result->has_fifo = false;
+        if(result->scratch_reg) {
+            result->model = uart_16450;
+        } else {
+            result->model = uart_8250;
+        }
     }
 }
 

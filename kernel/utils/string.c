@@ -1,6 +1,9 @@
 
 #include <utils/string.h>
 
+const char * true_str = "true";
+const char * false_str = "false";
+
 size_t strlen(const char *str)
 {
 	size_t ret = 0;

@@ -8,6 +8,26 @@
 
 #define UART_UART_BAUD 115200
 
+enum uart_model {
+    uart_unknown = 0,
+    uart_8250,
+    uart_16450,
+    uart_16550,
+    uart_16550A,
+    uart_16750,
+    uart_unsupported
+};
+// indexed by enum uart_model
+extern char * uart_models[];
+
+struct uart_caps {
+    enum uart_model model;
+    bool has_fifo;
+    bool scratch_reg;
+    uint8_t receive_fifo_size;
+    uint8_t transmit_fifo_size;
+};
+
 enum uart_port_register {
     UART_RECEIVER_BUFFER_REG = 0,
     UART_TRANSMIT_HOLDING_REG = 0,
@@ -107,6 +127,7 @@ enum uart_int_cause {
 
 enum uart_int_fifo_status {
     no_fifo = 0,
+    fifo_reserved_condition = 1,
     unusable_fifo = 2,
     fifo_enabled = 3
 };
@@ -197,5 +218,7 @@ uint16_t uart_calc_uart_divisor(uint16_t desired_baud);
 void uart_write_baud(enum uart_port port, uint16_t baud);
 bool uart_is_transmit_fifo_empty(enum uart_port port);
 void uart_transmit_fifo_spinwait(enum uart_port port);
+void uart_fingerprint_uart(enum uart_port port, struct uart_caps * result);
+void uart_print_info(struct uart_caps * caps);
 
 #endif
