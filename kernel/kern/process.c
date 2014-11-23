@@ -30,7 +30,7 @@ struct process * process_alloc(void) {
     } else {
         p = (struct process *)kalloc_static(sizeof(struct process), 0);
     }
-    kmemset(p, 0, sizeof(struct process));
+    memset(p, 0, sizeof(struct process));
     return p;
 }
 

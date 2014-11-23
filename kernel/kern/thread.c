@@ -22,7 +22,7 @@ struct thread * thread_alloc(void) {
     } else {
         t = (struct thread *)kalloc_static(sizeof(struct thread), 0);
     }
-    kmemset(t, 0, sizeof(struct thread));
+    memset(t, 0, sizeof(struct thread));
     return t;
 }
 

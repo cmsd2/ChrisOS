@@ -28,4 +28,6 @@ void multiboot_print_apm_table_info(void);
 void multiboot_print_vbe_info(void);
 void multiboot_print_framebuffer_info(void);
 
+const char * multiboot_get_cmdline(void);
+
 #endif

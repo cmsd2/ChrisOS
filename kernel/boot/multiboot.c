@@ -24,7 +24,7 @@ void load_multiboot_info(void) {
 
 	kprintf("Loading multiboot info from 0x%x\n", _bootstrap_info);
 
-	kmemset(&_multiboot_info, 0, sizeof(_multiboot_info));
+	memset(&_multiboot_info, 0, sizeof(_multiboot_info));
 
 	_multiboot_info.flags = _bootstrap_info->flags;
 
@@ -240,3 +240,6 @@ void multiboot_print_vbe_info(void) {
 void multiboot_print_framebuffer_info(void) {
 }
 
+const char * multiboot_get_cmdline(void) {
+    return (const char *)_multiboot_info.cmdline;
+}

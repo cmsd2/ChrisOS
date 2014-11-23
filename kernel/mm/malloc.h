@@ -10,10 +10,10 @@ void kmalloc_init(void);
 
 void kmalloc_print_info(void);
 
-void * kalloc(size_t bytes);
-void * kalloc2(size_t bytes, size_t alignment, enum alloc_region_flags flags);
-void kfree(void * mem);
-void * krealloc(void * ptr, size_t bytes);
+void * malloc(size_t bytes);
+void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags flags);
+void free(void * mem);
+void * realloc(void * ptr, size_t bytes);
 
 // info about each chunk of mem. stored inside mem at start.
 // TODO storing at start makes page aligning within tricky

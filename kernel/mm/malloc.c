@@ -16,18 +16,18 @@ void kmalloc_print_info(void) {
 
 // return 0 on failure
 // return ptr to kernel memory area at least as big as size bytes otherwise
-void * kalloc(size_t size) {
+void * malloc(size_t size) {
     bool ok;
     struct kmalloc_block * block;
 
     size_t block_size = sizeof(struct kmalloc_block) + size;
 
-    kprintf("attempting to alloc %ld bytes (requested=%ld + overhead=%ld)\n", block_size, size, sizeof(struct kmalloc_block));
+    //kprintf("attempting to alloc %ld bytes (requested=%ld + overhead=%ld)\n", block_size, size, sizeof(struct kmalloc_block));
 
     ok = allocator_mem_alloc(&_malloc_avail_mem, block_size, 0, 0, (mm_ptr_t*)&block);
 
     if(!ok) {
-        kprintf("failed to alloc %ld bytes in first pass\n", block_size);
+        //kprintf("failed to alloc %ld bytes in first pass\n", block_size);
         // try adding more pages
         size_t page_aligned_size = KMEM_PAGE_ALIGN(block_size);
         mm_ptr_t page_ptr = (mm_ptr_t)kmem_alloc(page_aligned_size);
@@ -52,26 +52,27 @@ void * kalloc(size_t size) {
     }
 }
 
-void * kalloc2(size_t bytes, size_t alignment, enum alloc_region_flags flags) {
-    //TODO implement kalloc2
+void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags flags) {
+    //TODO implement malloc_aligned
     return 0;
 }
 
-void kfree(void * mem) {
-    struct kmalloc_block * block;
-    block = STRUCT_START(struct kmalloc_block, data, mem);
+void free(void * mem) {
+    if(mem) {
+        struct kmalloc_block * block;
+        block = STRUCT_START(struct kmalloc_block, data, mem);
 
-    allocator_mem_free(&_malloc_avail_mem, (mm_ptr_t)block, block->block_size, 0); //TODO check alloc flags
-
-    return;
+        allocator_mem_free(&_malloc_avail_mem, (mm_ptr_t)block, block->block_size, 0); //TODO check alloc flags
+    }
 }
 
-void * krealloc(void * ptr, size_t size) {
-    void *new_ptr = kalloc(size);
+void * realloc(void * ptr, size_t size) {
+    //kprintf("reallocating ptr %lx to size %ld\n", ptr, size);
+    void *new_ptr = malloc(size);
 
-    if(new_ptr) {
-        kmemcpy(new_ptr, ptr, size);
-        kfree(ptr);
+    if(new_ptr && ptr) {
+        memcpy(new_ptr, ptr, size);
+        free(ptr);
     }
 
     return new_ptr;

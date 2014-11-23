@@ -102,7 +102,7 @@ unsigned int cpuid_max_extended_function_cpuid() {
 }
 
 void cpuid_read_info(struct cpuid_info * info) {
-	kmemset(info, 0, sizeof(*info));
+	memset(info, 0, sizeof(*info));
 
 	if(!cpuid_available()) {
 		return;

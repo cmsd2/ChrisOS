@@ -292,7 +292,7 @@ void paging_pt_unmap(struct page_table * pt, uintptr_t vaddr, size_t pages) {
 
 struct page_table * paging_alloc_static_pt(void) {
 	struct page_table * pt = (struct page_table*) kalloc_static(sizeof(struct page_table), PAGE_SIZE);
-    kmemset(pt, 0, sizeof(*pt));
+    memset(pt, 0, sizeof(*pt));
 	return pt;
 }
 

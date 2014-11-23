@@ -1,5 +1,5 @@
-
 #include <utils/string.h>
+#include <mm/malloc.h>
 
 const char * true_str = "true";
 const char * false_str = "false";
@@ -63,7 +63,7 @@ int strncmp(const char * a, const char * b, size_t n) {
 		}
 
 		if(ca > cb) {
-			return -1;
+			return 1;
 		}
 
 		a++;
@@ -72,3 +72,65 @@ int strncmp(const char * a, const char * b, size_t n) {
 
 	return 0;
 }
+
+int memcmp(const void * a, const void * b, size_t n) {
+	size_t i;
+	unsigned char * ca = (unsigned char *)a;
+    unsigned char * cb = (unsigned char *)b;
+
+    unsigned char cca, ccb;
+
+	for(i = 0; i < n; i++) {
+		cca = *ca;
+		ccb = *cb;
+
+		if(cca < ccb) {
+			return -1;
+		}
+
+		if(cca > ccb) {
+			return 1;
+		}
+
+		ca++;
+		cb++;
+	}
+
+	return 0;
+}
+
+char * strdup(const char *s1) {
+    size_t i;
+    size_t len = strlen(s1) + 1;
+    char * result;
+
+    result = (char*)malloc(len);
+    for(i = 0; i < len; i++) {
+        result[i] = s1[i];
+    }
+
+    return result;
+}
+
+char * strndup(const char *s1, size_t n) {
+    size_t i;
+    char * result;
+
+    for(i = 0; i < n; i++) {
+        if(s1[i] == 0) {
+            n = i + 1;
+            break;
+        }
+    }
+
+    result = malloc(n + 1);
+
+    for(i = 0; i < n; i++) {
+        result[i] = s1[i];
+    }
+
+    result[n] = 0;
+
+    return result;
+}
+

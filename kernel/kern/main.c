@@ -22,6 +22,7 @@
 #include <arch/cpuid.h>
 #include <sys/process.h>
 #include <arch/uart.h>
+#include <kern/cmdline.h>
  
 void kmain()
 {
@@ -73,16 +74,16 @@ void kmain()
 	apic_init(&cpu);
 
     size_t size = 4096 * 100;
-    void * mem = kalloc(size);
+    void * mem = malloc(size);
     kprintf("Alloc'd at addr=0x%lx\n", mem);
-    kmemset(mem, 0xff, size);
-    kfree(mem);
+    memset(mem, 0xff, size);
+    free(mem);
     kprintf("Freed mem at addr=0x%lx\n", mem);
-    mem = kalloc(4096 * 10);
-    void * mem2 = kalloc(4096);
-    kfree(mem);
+    mem = malloc(4096 * 10);
+    void * mem2 = malloc(4096);
+    free(mem);
     kmalloc_print_info();
-    kfree(mem2);
+    free(mem2);
     kmalloc_print_info();
 
     uart_init();
@@ -90,6 +91,11 @@ void kmain()
     uart_fingerprint_uart(UART_COM1, &caps);
     uart_print_info(&caps);
     uart_enable(UART_COM1);
+
+    multiboot_print_cmdline_info();
+
+    cmdline_parse(multiboot_get_cmdline());
+    cmdline_print_info();
 
 	kprintf("Hello, kernel world!\n");
 }

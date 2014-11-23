@@ -2,7 +2,7 @@ Import('env')
 
 project_root = Dir('#').abspath
 env = env.Clone(PROJECT_ROOT = project_root,
-    CFLAGS = env['CFLAGS'] + ' -D_KERNEL -I$PROJECT_ROOT/kernel/$ARCH -I$PROJECT_ROOT/kernel -I$PROJECT_ROOT/include -I$PROJECT_ROOT/libs/uthash/src',
+    CFLAGS = env['CFLAGS'] + ' -Werror -D_KERNEL -I$PROJECT_ROOT/kernel/$ARCH -I$PROJECT_ROOT/kernel -I$PROJECT_ROOT/include -I$PROJECT_ROOT/libs/uthash/src',
     LINKFLAGS = env['LINKFLAGS'] + ' -T' + env['LINKER_SCRIPT'])
 
 Export('env')

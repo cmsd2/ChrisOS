@@ -89,7 +89,7 @@ unsigned int log2_64(uint64_t n) {
 	return i;
 }
 
-void * kmemset(void * addr, uint8_t value, size_t len) {
+void * memset(void * addr, uint8_t value, size_t len) {
 	uint8_t * b_addr;
 	uint8_t * word_addr;
 	unsigned long word_value = FILL_LONG_WITH_BYTE(value);
@@ -120,12 +120,12 @@ void * kmemset(void * addr, uint8_t value, size_t len) {
 	return addr;
 }
 
-void * kmemcpy(void * dest, void * src, size_t len) {
+void * memcpy(void * dest, void * src, size_t len) {
     //TODO optimise memcpy: don't use memmove
-    return kmemmove(dest, src, len);
+    return memmove(dest, src, len);
 }
 
-void * kmemmove(void * dest, void * src, size_t len) {
+void * memmove(void * dest, void * src, size_t len) {
     //TODO optimise memmove: don't use single-byte operations
     if(dest < src) {
         kmemcpy_b_fwd(dest, src, len);

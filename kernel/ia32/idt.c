@@ -14,7 +14,7 @@ void idt_init(void) {
 	_idt_header.base = (uint32_t) &_idt_entries;
 	_idt_header.limit = sizeof(struct idt_entry) * IDT_ENTRIES;
 
-	kmemset(&_idt_entries, 0, sizeof(struct idt_entry) * IDT_ENTRIES);
+	memset(&_idt_entries, 0, sizeof(struct idt_entry) * IDT_ENTRIES);
 }
 
 void idt_flush(void) {
