@@ -12,6 +12,7 @@ and areas of address space.
 #include <mm/mm_types.h>
 #include <mm/allocator.h>
 #include <arch/paging.h>
+#include <utils/mem.h>
 
 enum KMEM_FLAGS {
     KMEM_ZERO = 1,
