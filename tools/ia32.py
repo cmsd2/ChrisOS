@@ -15,8 +15,8 @@ def generate(env, **kwargs):
     env['CC'] = sysroot + target + 'gcc'
     env['AR'] = sysroot + target + 'ar'
     env['RANLIB'] = sysroot + target + 'ranlib'
-    env['CFLAGS'] = '-nostdlib -ffreestanding -std=gnu99 -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow'
-    env['LINKFLAGS'] = '-nostdlib -ffreestanding'
+    env['CFLAGS'] = '-D__ChrisOS__ -std=gnu99 -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow'
+    env['LINKFLAGS'] = ''
 
 def exists(env):
     return 1

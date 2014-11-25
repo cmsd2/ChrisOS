@@ -1,10 +1,18 @@
 Import('env')
 
-project_root = Dir('#').abspath
-env = env.Clone(PROJECT_ROOT = project_root,
-    CFLAGS = env['CFLAGS'] + ' -Werror -D_KERNEL -I$PROJECT_ROOT/kernel/$ARCH -I$PROJECT_ROOT/kernel -I$PROJECT_ROOT/include -I$PROJECT_ROOT/libs/uthash/src',
-    LINKFLAGS = env['LINKFLAGS'] + ' -T' + env['LINKER_SCRIPT'])
+env = env.Clone(CFLAGS = env['CFLAGS'] + 
+    ' -nostdlib -ffreestanding -Werror -D_KERNEL' +
+    ' -I$PROJECT_ROOT/kernel/$ARCH' +
+    ' -I$PROJECT_ROOT/kernel' +
+    ' -I$PROJECT_ROOT/include' +
+    ' -I$PROJECT_ROOT/libs/uthash/src' +
+    ' -I$PROJECT_ROOT/libs/acpica/source/include',
+    LINKFLAGS = env['LINKFLAGS'] + ' -nostdlib -ffreestanding')
+Export('env')
 
+acpica_lib = env.SConscript('#libs/acpica/SConscript')
+
+env = env.Clone(LINKFLAGS = env['LINKFLAGS'] + ' -T' + env['LINKER_SCRIPT'])
 Export('env')
 
 ia32_lib = SConscript(env['ARCH'] + '/SConscript')
@@ -13,8 +21,9 @@ mm_lib = SConscript('mm/SConscript')
 utils_lib = SConscript('utils/SConscript')
 kern_lib = SConscript('kern/SConscript')
 terminal_lib = SConscript('terminal/SConscript')
+tests_lib = SConscript('tests/SConscript')
 
-kenv = env.Clone(LIBS = kern_lib + boot_lib + utils_lib + mm_lib + ia32_lib + terminal_lib + ['gcc'])
+kenv = env.Clone(LIBS = kern_lib + boot_lib + utils_lib + mm_lib + ia32_lib + terminal_lib + tests_lib + acpica_lib + ['gcc'])
 kenv['_LIBFLAGS'] = '-Wl,--start-group ' + kenv['_LIBFLAGS'] + ' -Wl,--end-group'
 kenv.Program('kernel.bin', [])
 Depends('kernel.bin', kenv['LINKER_SCRIPT'])

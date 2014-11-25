@@ -16,7 +16,8 @@ AddOption('--arch',
     help='arch e.g. ia32')
 
 arch = GetOption('arch')
-env = Environment(SYSROOT = GetOption('sysroot'), ARCH = arch, tools = ['default', arch], toolpath = ['tools'])
+project_root = Dir('#').abspath
+env = Environment(PROJECT_ROOT = project_root, SYSROOT = GetOption('sysroot'), ARCH = arch, tools = ['default', arch], toolpath = ['tools'])
 
 RustBuilder = Builder(action = 'rustc --target $LLVM_TRIPLE --crate-type lib --emit obj -o $TARGET $SOURCE', src_suffix = 'rs', suffix = 'o', single_source = 1)
 env['BUILDERS']['Rust'] = RustBuilder

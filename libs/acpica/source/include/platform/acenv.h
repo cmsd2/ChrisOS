@@ -285,6 +285,9 @@
 #elif defined(__HAIKU__)
 #include "achaiku.h"
 
+#elif defined(__ChrisOS__)
+#include "acchrisos.h"
+
 #else
 
 /* Unknown environment */

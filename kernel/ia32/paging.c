@@ -1,3 +1,4 @@
+#include <sys/param.h>
 #include <arch/paging.h>
 #include <mm/layout.h>
 #include <utils/panic.h>

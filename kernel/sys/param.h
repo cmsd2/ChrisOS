@@ -48,6 +48,9 @@
 #include <sys/limits.h>
 #endif
 
+#define	NBBY	8		/* number of bits in a byte */
+#define	NBPW	sizeof(int)	/* number of bytes per word (integer) */
+
 /* Bit map related macros. */
 #define	setbit(a,i)	(((unsigned char *)(a))[(i)/NBBY] |= 1<<((i)%NBBY))
 #define	clrbit(a,i)	(((unsigned char *)(a))[(i)/NBBY] &= ~(1<<((i)%NBBY)))
@@ -55,6 +58,13 @@
 	(((const unsigned char *)(a))[(i)/NBBY] & (1<<((i)%NBBY)))
 #define	isclr(a,i)							\
 	((((const unsigned char *)(a))[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
+
+// 0 <= a <= 31, 0 <= b <= 31
+#define bitmask(a, b) (((unsigned) -1 >> (31 - (b))) & ~((1U << (a)) - 1))
+#define getbit(a, i) getbits(a, i, i)
+#define getbits(a, i, j) ((a & bitmask(i, j)) >> i)
+#define withbit(a, i, value) withbits(a, i, i, value)
+#define withbits(a, i, j, value) ((a & ~bitmask(i, j)) | ((value << i) & bitmask(i, j)))
 
 /* Macros for counting and rounding. */
 #ifndef howmany
@@ -68,8 +78,22 @@
 #define powerof2(x)	((((x)-1)&(x))==0)
 
 /* Macros for min/max. */
-#define	MIN(a,b) (((a)<(b))?(a):(b))
-#define	MAX(a,b) (((a)>(b))?(a):(b))
+#ifndef MAX
+#define MAX(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+#endif
+
+#ifndef MIN
+#define MIN(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })
+#endif
+
+#define LOW_BYTE(word) ((word)&0xff)
+#define HIGH_BYTE(word) LOW_BYTE((word)>>8)
 
 #ifdef _KERNEL
 /*

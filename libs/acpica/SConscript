@@ -1,0 +1,15 @@
+Import('env')
+
+acpica_lib = env.Library('acpica', 
+    Glob('source/components/dispatcher/*.c') +
+    Glob('source/components/events/*.c') +
+    Glob('source/components/executor/*.c') +
+    Glob('source/components/hardware/*.c') +
+    Glob('source/components/namespace/*.c') +
+    Glob('source/components/parser/*.c') +
+    Glob('source/components/resources/*.c') +
+    Glob('source/components/tables/*.c') +
+    Glob('source/components/utilities/*.c')
+    )
+
+Return('acpica_lib')

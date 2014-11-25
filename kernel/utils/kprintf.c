@@ -34,7 +34,6 @@
  *	@(#)subr_prf.c	8.3 (Berkeley) 1/21/94
  */
 
-#define NBBY    8               /* number of bits in a byte */
 char const hex2ascii_data[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 char * const human_units[] = { "B", "KB", "MB", "GB", "TB", "PB" };
 const int max_human_unit = sizeof(human_units) / sizeof(char *) - 1;
@@ -46,6 +45,7 @@ const int max_human_unit = sizeof(human_units) / sizeof(char *) - 1;
 #include <terminal/terminal.h>
 #include <sys/types.h>
 #include <sys/ctype.h>
+#include <sys/param.h>
 
 /* Max number conversion buffer length: a u_quad_t in base 2, plus NUL byte. */
 #define MAXNBUF	(sizeof(intmax_t) * NBBY + 1)

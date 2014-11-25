@@ -8,15 +8,15 @@
 #define PIT_CH2_PORT 0x42
 #define PIT_CMD_PORT 0x43
 
-union pit_mode_cmd_reg {
-    uint8_t value;
-    struct {
-        uint8_t bcd_binary_mode : 1;
-        uint8_t operating_mode : 3;
-        uint8_t access_mode : 2;
-        uint8_t select_channel : 2;
-    } fields;
-};
+typedef uint8_t pit_mode_cmd_t;
+#define PIT_MODE_CMD_GET_BCD_BINARY_MODE(pit) getbit(pit, 0)
+#define PIT_MODE_CMD_GET_OPERATING_MODE(pit) getbits(pit, 1, 3)
+#define PIT_MODE_CMD_GET_ACCESS_MODE(pit) getbits(pit, 4, 5)
+#define PIT_MODE_CMD_GET_SELECT_CHANNEL(pit) getbits(pit, 6, 7)
+#define PIT_MODE_CMD_SET_BCD_BINARY_MODE(pit, value) withbit(pit, 0, value)
+#define PIT_MODE_CMD_SET_OPERATING_MODE(pit, value) withbits(pit, 1, 3, value)
+#define PIT_MODE_CMD_SET_ACCESS_MODE(pit, value) withbits(pit, 4, 5, value)
+#define PIT_MODE_CMD_SET_SELECT_CHANNEL(pit, value) withbits(pit, 6, 7, value)
 
 enum pit_select_channel {
     pit_channel_0 = 0,

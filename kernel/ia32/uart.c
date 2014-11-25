@@ -1,7 +1,7 @@
 #include <arch/uart.h>
 #include <utils/kprintf.h>
 #include <sys/io.h>
-#include <sys/standard.h>
+#include <sys/param.h>
 #include <utils/string.h>
 
 char * uart_models[] = {"unknown", "8250", "16450", "16550", "16550A", "16750", "unsupported"};
@@ -10,34 +10,34 @@ void uart_init() {
 }
 
 void uart_enable(enum uart_port port) {
-    union uart_line_ctrl_reg line_ctrl = { .value = 0 };
+    uart_lcr_t lcr = 0;
 
     uart_write_reg(port, UART_INTERRUPT_ENABLE_REG, 0);
 
-    line_ctrl.fields.dlab = dlab_on;
-    uart_write_reg(port, UART_LINE_CTRL_REG, line_ctrl.value);
+    lcr = UART_LCR_SET_DLAB(lcr, uart_lcr_dlab_on);
+    uart_write_reg(port, UART_LINE_CTRL_REG, lcr);
 
     uart_write_baud(port, 38400);
 
-    line_ctrl.fields.dlab = dlab_off;
-    line_ctrl.fields.parity = no_parity;
-    line_ctrl.fields.stop_bits = one_stop_bit;
-    uart_write_reg(port, UART_LINE_CTRL_REG, line_ctrl.value);
+    lcr = UART_LCR_SET_DLAB(lcr, uart_lcr_dlab_off);
+    lcr = UART_LCR_SET_PARITY(lcr, uart_lcr_no_parity);
+    lcr = UART_LCR_SET_STOP_BITS(lcr, uart_lcr_one_stop_bit);
+    uart_write_reg(port, UART_LINE_CTRL_REG, lcr);
 
-    union uart_fifo_ctrl_reg fifo_ctrl = { .value = 0 };
-    fifo_ctrl.fields.enable = 1;
-    fifo_ctrl.fields.clear_receive_fifo = 1;
-    fifo_ctrl.fields.clear_transmit_fifo = 1;
-    fifo_ctrl.fields.int_trigger_level = fourteen_bytes;
-    uart_write_reg(port, UART_FIFO_CTRL_REG, fifo_ctrl.value);
+    uart_fcr_t fcr = 0;
+    fcr = UART_FCR_SET_ENABLED(fcr, 1);
+    fcr = UART_FCR_SET_CLEAR_RX_FIFO(fcr, 1);
+    fcr = UART_FCR_SET_CLEAR_TX_FIFO(fcr, 1);
+    fcr = UART_FCR_SET_INT_TRIGGER_LEVEL(fcr, uart_fcr_fourteen_bytes);
+    uart_write_reg(port, UART_FIFO_CTRL_REG, fcr);
 
     // irqs enabled, rts/dsr set
-    union uart_modem_ctrl_reg modem_ctrl = { .value = 0 };
-    modem_ctrl.fields.data_terminal_ready = 1;
-    modem_ctrl.fields.request_to_send = 1;
-    modem_ctrl.fields.int_enable_or_aux_out_2 = 1;
+    uart_mcr_t mcr = 0;
+    mcr = UART_MCR_SET_DATA_TERMINAL_READY(mcr, 1);
+    mcr = UART_MCR_SET_REQUEST_TO_SEND(mcr, 1);
+    mcr = UART_MCR_SET_INT_ENABLE_OR_AUX_OUT_2(mcr, 1);
 
-    uart_write_reg(port, UART_MODEM_CTRL_REG, modem_ctrl.value);
+    uart_write_reg(port, UART_MODEM_CTRL_REG, mcr);
 }
 
 void uart_write_reg(enum uart_port port, enum uart_port_register reg, uint8_t value) {
@@ -66,14 +66,25 @@ void uart_write_baud(enum uart_port port, uint16_t baud) {
 }
 
 bool uart_is_transmit_fifo_empty(enum uart_port port) {
-    union uart_line_status_reg status_reg;
-    status_reg.value = uart_read_reg(port, UART_LINE_STATUS_REG);
-    return status_reg.fields.thr_empty == 1;
+    uart_lsr_t lsr = uart_read_reg(port, UART_LINE_STATUS_REG);
+    return UART_LSR_GET_THR_EMPTY(lsr) == 1;
+}
+
+bool uart_is_receive_fifo_empty(enum uart_port port) {
+    uart_lsr_t lsr = uart_read_reg(port, UART_LINE_STATUS_REG);
+    return UART_LSR_GET_DATA_AVAILABLE(lsr) == 0;
 }
 
 void uart_transmit_fifo_spinwait(enum uart_port port) {
     int i = 0;
     while(!uart_is_transmit_fifo_empty(port)) {
+        i++;
+    }
+}
+
+void uart_receive_fifo_spinwait(enum uart_port port) {
+    int i = 0;
+    while(uart_is_receive_fifo_empty(port)) {
         i++;
     }
 }
@@ -85,11 +96,11 @@ void uart_print_info(struct uart_caps * caps) {
 }
 
 void uart_fingerprint_uart(enum uart_port port, struct uart_caps * result) {
-    union uart_fifo_ctrl_reg fifo_ctrl = { .value = 0 };
-    fifo_ctrl.fields.enable = 1;
-    fifo_ctrl.fields.clear_receive_fifo = 1;
-    fifo_ctrl.fields.clear_transmit_fifo = 1;
-    uart_write_reg(port, UART_FIFO_CTRL_REG, fifo_ctrl.value);
+    uart_fcr_t fcr = 0;
+    fcr = UART_FCR_SET_ENABLED(fcr, 1);
+    fcr = UART_FCR_SET_CLEAR_RX_FIFO(fcr, 1);
+    fcr = UART_FCR_SET_CLEAR_TX_FIFO(fcr, 1);
+    uart_write_reg(port, UART_FIFO_CTRL_REG, fcr);
 
     uint8_t scratch = 0x2a;
     uart_write_reg(port, UART_SCRATCH_REG, scratch);
@@ -99,12 +110,11 @@ void uart_fingerprint_uart(enum uart_port port, struct uart_caps * result) {
         result->scratch_reg = false;
     }
 
-    union uart_int_id_reg int_id;
-    int_id.value = uart_read_reg(port, UART_INTERRUPT_IDENT_REG);
+    uart_iir_t iir = uart_read_reg(port, UART_INTERRUPT_IDENT_REG);
 
-    if(int_id.fields.fifo_status == fifo_enabled) {
+    if(UART_IIR_GET_FIFO_STATUS(iir) == uart_iir_fifo_enabled) {
         result->has_fifo = true;
-        if(int_id.fields.sixty_four_byte_buffer_enabled) {
+        if(UART_IIR_GET_64_BYTE_BUFFER_ENABLED(fcr)) {
             result->model = uart_16750;
             result->receive_fifo_size = 64;
             result->transmit_fifo_size = 64;
@@ -113,7 +123,7 @@ void uart_fingerprint_uart(enum uart_port port, struct uart_caps * result) {
             result->receive_fifo_size = 16;
             result->transmit_fifo_size = 16;
         }
-    } else if(int_id.fields.fifo_status == fifo_reserved_condition) {
+    } else if(UART_IIR_GET_FIFO_STATUS(fcr) == uart_iir_fifo_reserved_condition) {
         result->model = uart_16550;
         result->has_fifo = true;
         result->receive_fifo_size = 1;
@@ -141,5 +151,11 @@ void uart_puts_sync(enum uart_port port, const char * s) {
         s++;
         c = *s;
     }
+}
+
+char uart_getc_sync(enum uart_port port) {
+    uart_receive_fifo_spinwait(port);
+
+    return (char)inb(port);
 }
 

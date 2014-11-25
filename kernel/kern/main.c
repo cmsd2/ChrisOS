@@ -23,6 +23,7 @@
 #include <sys/process.h>
 #include <arch/uart.h>
 #include <kern/cmdline.h>
+#include <tests/tests.h>
  
 void kmain()
 {
@@ -100,5 +101,8 @@ void kmain()
     cmdline_print_info();
 
     uart_puts_sync(UART_COM1, "Hello, serial port!\n");
+
+    test_all();
+
 	kprintf("Hello, kernel world!\n");
 }

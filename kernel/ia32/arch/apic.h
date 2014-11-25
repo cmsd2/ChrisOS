@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <arch/cpuid.h>
+#include <sys/param.h>
 
 #define APIC_BASE_MSR_BSP 0x100
 #define APIC_BASE_MSR_X2APIC 0x400
@@ -17,6 +18,8 @@
  * each value being 128 bit aligned
  * registers are between 32 and 256 bits wide.
  * accesses must use individual 32 bit wide loads and stores
+ *
+ * ia32 vol3 table 10-1
  */
 #define APIC_REG_ID 0x20 // apic id reg
 #define APIC_REG_VERSION 0x30 // apic version reg
@@ -45,104 +48,94 @@
 #define APIC_REG_TIMER_CCR 0x390 // timer current count reg
 #define APIC_REG_TIMER_DCR 0x3E0 // timer divide config reg
 
-union apic_lvt {
-    unsigned int value;
-    struct {
-        unsigned int vector : 8;
-        unsigned int reserved_8_11 : 4;
-        unsigned int delivery_status : 1;
-        unsigned int input_pin_polarity : 1;
-        unsigned int remote_irr : 1;
-        unsigned int trigger_mode : 1;
-        unsigned int mask : 1;
-        unsigned int timer_mode : 2;
-        unsigned int reserved_19_31 : 13;
-    } fields;
-};
+typedef unsigned int apic_lvt_t;
 
-// ia32 10.5. fig 10-8. lvt timer reg bits 18:17
+#define APIC_LVT_GET_VECTOR(lvt) getbits(lvt, 0, 7)
+#define APIC_LVT_GET_DELIVERY_MODE(lvt) getbits(lvt, 8, 10)
+#define APIC_LVT_GET_DELIVERY_STATUS(lvt) getbit(lvt, 12)
+#define APIC_LVT_GET_INPUT_PIN_POLARITY(lvt) getbit(lvt, 13)
+#define APIC_LVT_GET_REMOTE_IRR(lvt) getbit(lvt, 14)
+#define APIC_LVT_GET_TRIGGER_MODE(lvt) getbit(lvt, 15)
+#define APIC_LVT_GET_MASK(lvt) getbit(lvt, 16)
+#define APIC_LVT_GET_TIMER_MODE(lvt) getbits(lvt, 17, 18)
+#define APIC_LVT_SET_VECTOR(lvt, value) withbits(lvt, 0, 7, value)
+#define APIC_LVT_SET_DELIVERY_MODE(lvt, value) withbits(lvt, 8, 10, value)
+#define APIC_LVT_SET_DELIVERY_STATUS(lvt, value) withbit(lvt, 12, value)
+#define APIC_LVT_SET_INPUT_PIN_POLARITY(lvt, value) withbit(lvt, 13, value)
+#define APIC_LVT_SET_REMOTE_IRR(lvt, value) withbit(lvt, 14, value)
+#define APIC_LVT_SET_TRIGGER_MODE(lvt, value) withbit(lvt, 15, value)
+#define APIC_LVT_SET_MASK(lvt, value) withbit(lvt, 16, value)
+#define APIC_LVT_SET_TIMER_MODE(lvt, value) withbits(lvt, 17, 18, value)
+
+#define APIC_LVT_PERF_GET_NMI
+
+// ia32 vol3 10.5. fig 10-8. lvt timer reg bits 18:17
 enum apic_timer_mode {
-    APIC_TIMER_ONE_SHOT = 0,
-    APIC_TIMER_PERIODIC = 0x20000,
-    APIC_TIMER_TSC_DEADLINE = 0x40000,
-
-    // field bitmask
-    APIC_TIMER_MODE_MASK = 0x60000
+    apic_timer_one_shot = 0,
+    apic_timer_periodic = 2,
+    apic_timer_tsc_deadline = 4,
 };
 
 enum apic_lvt_delivery_mode {
-    APIC_LVT_FIXED = 0,
-    APIC_LVT_SMI = 0x200,
-    APIC_LVT_NMI = 0x400,
-    APIC_LVT_INIT = 0x500,
-    APIC_LVT_EXT_INT = 0x700,
-
-    // field mask
-    APIC_LVT_DELIVERY_MODE_MASK = 0x700
+    apic_lvt_delivery_fixed = 0,
+    apic_lvt_delivery_smi = 2,
+    apic_lvt_delivery_nmi = 4,
+    apic_lvt_delivery_init = 5,
+    apic_lvt_delivery_ext_int = 7,
 };
 
 enum apic_lvt_delivery_status {
-    APIC_LVT_IDLE = 0,
-    APIC_LVT_SEND_PENDING = 0x1000,
-
-    // field mask
-    APIC_LVT_DELIVERY_STATUS_MASK = 0x1000
+    apic_lvt_delivery_status_idle = 0,
+    apic_lvt_delivery_status_send_pending = 1,
 };
 
 enum apic_lvt_interrupt_input_polarity {
-    APIC_LVT_ACTIVE_HIGH = 0,
-    APIC_LVT_ACTIVE_LOW = 0x2000,
-
-    // field mask
-    APIC_LVT_POLARITY_MASK = 0x2000
+    apic_lvt_interrupt_input_polarity_active_high = 0,
+    apic_lvt_interrupt_input_polarity_active_low = 2,
 };
 
 enum apic_lvt_remote_read {
-    APIC_LVT_IRR_OFF = 0,
-    APIC_LVT_IRR_ON = 0x4000
+    apic_lvt_remote_read_off = 0,
+    apic_lvt_remote_read_on = 4,
 };
 
 enum apic_lvt_trigger_mode {
-    APIC_LVT_EDGE_TRIGGERED = 0,
-    APIC_LVT_LEVEL_TRIGGERED = 0x8000
+    apic_lvt_edge_triggered = 0,
+    apic_lvt_level_triggered = 8,
 };
 
 enum apic_lvt_mask {
-    APIC_LVT_UNMASKED = 0,
-    APIC_LVT_MASKED = 0x10000
+    apic_lvt_unmasked = 0,
+    apic_lvt_masked = 1,
 };
 
+// ia32 vol3 fig 10-26.
 struct apic_base_msr {
-	union {
-		unsigned int value;
-		struct {
-			unsigned int reserved_0_7 : 8;
-			unsigned int bsp : 1; // bit 8
-			unsigned int reserved_9 : 1; // bit 9
-			unsigned int x2apic_enable : 1; // bit 10
-			unsigned int global_enable : 1; // bit 11
-			unsigned int apic_base_low_part : 20;
-		} fields;
-	} low;
-	union {
-		unsigned int value;
-		struct {
-			unsigned int apic_base_high;
-		} fields;
-	} high;
+    unsigned int low;
+    unsigned int high;
 };
+#define APIC_MSR_LOW_GET_BSP(msr) getbit(msr, 8)
+#define APIC_MSR_LOW_GET_X2APIC_ENABLE(msr) getbit(msr, 10)
+#define APIC_MSR_LOW_GET_GLOBAL_ENABLE(msr) getbit(msr, 11)
+#define APIC_MSR_LOW_GET_BASE(msr) withbits(0, 0, 19, getbits(msr, 12, 31))
+#define APIC_MSR_HIGH_GET_BASE(msr) withbits(0, 20, 23, getbits(msr, 0, 3))
+#define APIC_MSR_GET_BASE(msr_high, msr_low) (APIC_MSR_LOW_GET_BASE(msr_low) | APIC_MSR_HIGH_GET_BASE(msr_high))
+#define APIC_MSR_LOW_SET_BSP(msr, value) withbit(msr, 8, value)
+#define APIC_MSR_LOW_SET_X2APIC_ENABLE(msr, value) withbit(msr, 10, value)
+#define APIC_MSR_LOW_SET_GLOBAL_ENABLE(msr, value) withbit(msr, 11, value)
+#define APIC_MSR_LOW_SET_BASE(msr, value) withbits(msr, 12, 31, getbits(value, 0, 19))
+#define APIC_MSR_HIGH_SET_BASE(msr, value) withbits(msr, 0, 3, getbits(value, 20, 23))
 
-union apic_sivr {
-	unsigned int value;
-	struct {
-		unsigned int spurious_vector : 8;
-		unsigned int software_enable : 1;
-		unsigned int focus_proc_checking : 1;
-		unsigned int reserved_10_11 : 2;
-		unsigned int eoi_broadcast_supress : 1;
-		unsigned int reserved_13_31 : 19;
-	} fields;
-};
+// ia32 vol3 fig 10-23. spurious interrupt vector register
+typedef unsigned int apic_svr_t;
+#define APIC_SVR_GET_VECTOR(svr) getbits(svr, 0, 7)
+#define APIC_SVR_GET_SOFTWARE_ENABLE(svr) getbit(svr, 8)
+#define APIC_SVR_GET_FOCUS_PROC_CHECKING(svr) getbit(svr, 9)
+#define APIC_SVR_GET_EOI_BROADCAST_SUPRESS(svr) getbit(svr, 12)
+#define APIC_SVR_SET_VECTOR(svr, value) withbits(svr, 0, 7, value)
+#define APIC_SVR_SET_SOFTWARE_ENABLE(svr, value) withbit(svr, 8, value)
+#define APIC_SVR_SET_FOCUS_PROC_CHECKING(svr, value) withbit(svr, 9, value)
+#define APIC_SVR_SET_EOI_BROADCAST_SUPRESS(svr, value) withbit(svr, 12, value)
 
 void apic_init(const struct cpuid_info * cpu);
 void apic_timer_init();
@@ -161,8 +154,8 @@ void apic_write_reg_32(unsigned int reg, unsigned int value);
 void apic_sivr_enable();
 void apic_sivr_disable();
 const struct apic_base_msr * apic_get_base_msr();
-void apic_lvt_write(unsigned int reg, const union apic_lvt * lvt);
-void apic_lvt_read(unsigned int reg, union apic_lvt * lvt);
+void apic_lvt_write(unsigned int reg, apic_lvt_t lvt);
+void apic_lvt_read(unsigned int reg, apic_lvt_t * lvt);
 void apic_eoi();
 void apic_timer_disable_interrupt();
 void apic_timer_enable_interrupt(uint8_t int_no);

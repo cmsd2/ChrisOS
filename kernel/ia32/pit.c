@@ -3,21 +3,21 @@
 #include <assert.h>
 #include <sys/io.h>
 #include <arch/ps2.h>
-#include <sys/standard.h>
+#include <sys/param.h>
 #include <utils/kprintf.h>
 
 void pit_set_mode(enum pit_select_channel channel, enum pit_access_mode access_mode, enum pit_operating_mode mode) {
     unsigned short port = PIT_CMD_PORT;
     assert(channel >= pit_channel_0 && channel <= pit_channel_2);
 
-    union pit_mode_cmd_reg mode_reg;
-    mode_reg.fields.bcd_binary_mode = pit_binary_mode;
-    mode_reg.fields.operating_mode = mode;
-    mode_reg.fields.access_mode = access_mode;
-    mode_reg.fields.select_channel = channel;
+    pit_mode_cmd_t mode_reg = 0;
+    mode_reg = PIT_MODE_CMD_SET_BCD_BINARY_MODE(mode_reg, pit_binary_mode);
+    mode_reg = PIT_MODE_CMD_SET_OPERATING_MODE(mode_reg, mode);
+    mode_reg = PIT_MODE_CMD_SET_ACCESS_MODE(mode_reg, access_mode);
+    mode_reg = PIT_MODE_CMD_SET_SELECT_CHANNEL(mode_reg, channel);
 
     //kprintf("writing %hhx to pit port %hx\n", mode_reg.value, port);
-    outb(port, mode_reg.value);
+    outb(port, mode_reg);
 }
 
 void pit_set_counter(enum pit_select_channel channel, uint8_t value) {

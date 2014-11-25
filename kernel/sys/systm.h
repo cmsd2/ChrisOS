@@ -1,6 +1,7 @@
 #ifndef SYS_SYSTEM_H
 #define SYS_SYSTEM_H
 
-unsigned long strtoul(const char *, char **, int);
+#include <utils/strtoul.h>
+#include <utils/strtouq.h>
 
 #endif

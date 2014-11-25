@@ -58,14 +58,15 @@ uint8_t cpuid_current_cpu_apic_id(void) {
 enum cpuid_vendor_id cpuid_vendor() {
 	size_t i;
 	char str[12];
-	uint32_t * strptr = (uint32_t *)str;
+	unsigned * strptr = (unsigned *)str;
 
-	__asm__ volatile("mov $0, %%eax\n\t"
+    cpuid(0, 0, &strptr[0], &strptr[2], &strptr[1]);
+	/*__asm__ volatile("mov $0, %%eax\n\t"
 		"cpuid\n\t"
 		: "=b" (strptr[0]), "=d" (strptr[1]), "=c" (strptr[2])
 		: "r" (strptr)
 		: "%eax"
-		);
+		);*/
 
 	for(i = 0; i < sizeof(cpuid_vendors); i++) {
 		if(strncmp(cpuid_vendors[i], str, 12) == 0) {
@@ -116,15 +117,15 @@ void cpuid_read_info(struct cpuid_info * info) {
 		info->meta.max_extended_cpuid = 0;
 
 		// footnote 1, 10-8 Vol. 3A Intel SMD
-		info->address_size.fields.physical_address_bits = 36;
+		info->address_size = CPUID_ADDRESS_SIZE_SET_PHYSICAL_BITS(0, 36);
 	} else {
 		/* pentium 4 and up */
 		info->meta.max_extended_cpuid = cpuid_max_extended_function_cpuid();
 
-		cpuid(CPUID_INTEL_ADDRESS_SIZE, &info->address_size.value, 0, 0, 0);
+		cpuid(CPUID_INTEL_ADDRESS_SIZE, &info->address_size, 0, 0, 0);
 	}
 
-	cpuid(CPUID_GET_FEATURES, &info->mfs.value, &info->apic.value, &info->features.ecx, &info->features.edx);
+	cpuid(CPUID_GET_FEATURES, &info->mfs, &info->apic, &info->features.ecx, &info->features.edx);
 }
 
 void cpuid_print_info(const struct cpuid_info * info) {
@@ -133,23 +134,23 @@ void cpuid_print_info(const struct cpuid_info * info) {
 		info->meta.max_extended_cpuid);
 	kprintf("vendor_string=%s\n", info->vendor_string);
 	kprintf("stepping_id=%u model=%u family_id=%u cpu_type=%u ext_model_id=%u ext_family_id=%u\n", 
-		info->mfs.fields.stepping_id,
-		info->mfs.fields.model,
-		info->mfs.fields.family_id,
-		info->mfs.fields.cpu_type,
-		info->mfs.fields.extended_model_id,
-		info->mfs.fields.extended_family_id);
+		CPUID_MFS_GET_STEPPING_ID(info->mfs),
+		CPUID_MFS_GET_MODEL(info->mfs),
+		CPUID_MFS_GET_FAMILY_ID(info->mfs),
+		CPUID_MFS_GET_CPU_TYPE(info->mfs),
+		CPUID_MFS_GET_EXT_MODEL_ID(info->mfs),
+		CPUID_MFS_GET_EXT_FAMILY_ID(info->mfs));
 	kprintf("brand_index=%u clflush=%u max_apic_ids=%u initial_apic_id=%u\n",
-		info->apic.fields.brand_index,
-		info->apic.fields.clflush,
-		info->apic.fields.max_apic_ids,
-		info->apic.fields.initial_apic_id);
+		CPUID_APIC_GET_BRAND_INDEX(info->apic),
+		CPUID_APIC_GET_CLFLUSH(info->apic),
+		CPUID_APIC_GET_MAX_APIC_IDS(info->apic),
+		CPUID_APIC_GET_INITIAL_APIC_ID(info->apic));
 
 	kprintf("features.edx=0x%x features.ecx=0x%x\n", 
 		info->features.edx, 
 		info->features.ecx);
 
 	kprintf("max_phys_addr_bits=%u max_lin_addr_bits=%u\n",
-		info->address_size.fields.physical_address_bits,
-		info->address_size.fields.linear_address_bits);
+		CPUID_ADDRESS_SIZE_GET_PHYSICAL_BITS(info->address_size),
+		CPUID_ADDRESS_SIZE_GET_LINEAR_BITS(info->address_size));
 }

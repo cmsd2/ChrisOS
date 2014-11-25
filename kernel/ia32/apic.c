@@ -41,20 +41,20 @@ void apic_init(const struct cpuid_info * cpu) {
     // todo: in multiprocessor system each cpu has different logical ID
     apic_write_reg_32(APIC_REG_LDR, 0x1 << 24);
 
-    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_MASKED);
-    apic_write_reg_32(APIC_REG_LVT_PERF_MCR, APIC_LVT_NMI);
-    apic_write_reg_32(APIC_REG_LVT_LINT0, APIC_LVT_MASKED);
-    apic_write_reg_32(APIC_REG_LVT_LINT1, APIC_LVT_MASKED);
+    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_SET_MASK(0, apic_lvt_masked));
+    apic_write_reg_32(APIC_REG_LVT_PERF_MCR, APIC_LVT_SET_DELIVERY_MODE(0, apic_lvt_delivery_nmi));
+    apic_write_reg_32(APIC_REG_LVT_LINT0, APIC_LVT_SET_MASK(0, apic_lvt_masked));
+    apic_write_reg_32(APIC_REG_LVT_LINT1, APIC_LVT_SET_MASK(0, apic_lvt_masked));
     apic_write_reg_32(APIC_REG_TPR, 0);
 
 	apic_global_enable(cpu);
 
 	//todo mask all the interrupts until ready to receive them
 
-    union apic_sivr sivr = {.value = 0};
-    sivr.fields.software_enable = 1;
-    sivr.fields.spurious_vector = 39;
-    apic_write_reg_32(APIC_REG_SIVR, sivr.value);
+    apic_svr_t sivr = 0;
+    sivr = APIC_SVR_SET_SOFTWARE_ENABLE(sivr, 1);
+    sivr = APIC_SVR_SET_VECTOR(sivr, 39);
+    apic_write_reg_32(APIC_REG_SIVR, sivr);
 
     apic_timer_init();
 }
@@ -110,7 +110,7 @@ void apic_timer_set_initial_count(unsigned int start_count) {
 }
 
 void apic_timer_disable_interrupt() {
-    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_MASKED);
+    apic_write_reg_32(APIC_REG_LVT_TIMER, APIC_LVT_SET_MASK(0, apic_lvt_masked));
 }
 
 void apic_timer_enable_interrupt(uint8_t int_no) {
@@ -135,13 +135,13 @@ const struct apic_base_msr * apic_get_base_msr() {
  * can't be done after global disable, without reset.
  */
 void apic_global_enable(const struct cpuid_info * cpu) {
-	if(!_apic_base_msr.low.fields.global_enable) {
-		_apic_base_msr.low.fields.global_enable = 1;
+	if(!APIC_MSR_LOW_GET_GLOBAL_ENABLE(_apic_base_msr.low) == 1) {
+        _apic_base_msr.low = APIC_MSR_LOW_SET_GLOBAL_ENABLE(_apic_base_msr.low, 1);
 
 		apic_write_msr(&_apic_base_msr);
 		apic_read_msr(cpu, &_apic_base_msr);
 
-		assert(_apic_base_msr.low.fields.global_enable);
+		assert(APIC_MSR_LOW_GET_GLOBAL_ENABLE(_apic_base_msr.low) == 1);
 	}
 }
 
@@ -177,24 +177,24 @@ void apic_write_reg_32(unsigned int reg, unsigned int value) {
 }
 
 void apic_sivr_enable() {
-    union apic_sivr sivr_reg;
-	apic_read_reg_32(APIC_REG_SIVR, &sivr_reg.value);
+    apic_svr_t sivr;
+	apic_read_reg_32(APIC_REG_SIVR, &sivr);
 
-	if(!sivr_reg.fields.software_enable) {
-		sivr_reg.fields.software_enable = 1;
+	if(!APIC_SVR_GET_SOFTWARE_ENABLE(sivr)) {
+        sivr = APIC_SVR_SET_SOFTWARE_ENABLE(sivr, 1);
 
-		apic_write_reg_32(APIC_REG_SIVR, sivr_reg.value);
+		apic_write_reg_32(APIC_REG_SIVR, sivr);
 	}
 }
 
 void apic_sivr_disable() {
-	union apic_sivr sivr_reg;
-	apic_read_reg_32(APIC_REG_SIVR, &sivr_reg.value);
+    apic_svr_t sivr;
+	apic_read_reg_32(APIC_REG_SIVR, &sivr);
 
-	if(sivr_reg.fields.software_enable) {
-		sivr_reg.fields.software_enable = 0;
+	if(!APIC_SVR_GET_SOFTWARE_ENABLE(sivr)) {
+        sivr = APIC_SVR_SET_SOFTWARE_ENABLE(sivr, 0);
 
-		apic_write_reg_32(APIC_REG_SIVR, sivr_reg.value);
+		apic_write_reg_32(APIC_REG_SIVR, sivr);
 	}
 }
 
@@ -205,9 +205,9 @@ void apic_print_base_msr(const struct apic_base_msr * msr) {
 	kprintf("apic_low=0x%x apic_high=0x%x bsp=%u global_enabled=%u x2_enabled=%u\n", 
 		base_low,
 		base_high,
-		msr->low.fields.bsp, 
-		msr->low.fields.global_enable,
-		msr->low.fields.x2apic_enable);
+		APIC_MSR_LOW_GET_BSP(msr->low),
+		APIC_MSR_LOW_GET_GLOBAL_ENABLE(msr->low),
+		APIC_MSR_LOW_GET_X2APIC_ENABLE(msr->low));
 }
 
 bool apic_available(const struct cpuid_info * cpu) {
@@ -226,32 +226,32 @@ void apic_read_msr(const struct cpuid_info * cpu, struct apic_base_msr * msr) {
 
 	assert(cpu);
 
-	max_phys_addr_bits = cpu->address_size.fields.physical_address_bits;
+	max_phys_addr_bits = CPUID_ADDRESS_SIZE_GET_PHYSICAL_BITS(cpu->address_size);
 	assert(max_phys_addr_bits);
 	assert(max_phys_addr_bits >= 32);
 
-	msrs_get(IA32_APIC_BASE, &msr->low.value, &msr->high.value);
+	msrs_get(IA32_APIC_BASE, &msr->low, &msr->high);
 
 	unsigned int high_mask = ~(0xffffffff << (max_phys_addr_bits - 32));
 
-	msr->high.value &= high_mask;
+	msr->high &= high_mask;
 }
 
 void apic_write_msr(const struct apic_base_msr * msr) {
 	assert(msr);
-	assert(msr->low.value);
+	assert(msr->low);
 
-	msrs_set(IA32_APIC_BASE, msr->low.value, msr->high.value);
+	msrs_set(IA32_APIC_BASE, msr->low, msr->high);
 }
 
 void apic_get_base(const struct apic_base_msr * msr, unsigned int * low, unsigned int * high) {
-	*low = msr->low.fields.apic_base_low_part << 12;
-	*high = msr->high.fields.apic_base_high;
+    *low = APIC_MSR_LOW_GET_BASE(msr->low) << 12;
+    *high = APIC_MSR_HIGH_GET_BASE(msr->high);
 }
 
 void apic_set_base(struct apic_base_msr * msr, uint32_t low, uint32_t high) {
-	msr->low.fields.apic_base_low_part = low >> 12;
-	msr->high.fields.apic_base_high = high;
+    msr->low = APIC_MSR_LOW_SET_BASE(msr->low, (low >> 12));
+    msr->high = APIC_MSR_HIGH_SET_BASE(msr->high, high);
 }
 
 uint8_t apic_current_cpu_apic_id(void) {

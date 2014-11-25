@@ -3,8 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include <sys/standard.h>
+#include <sys/param.h>
 
 enum cpuid_vendor_id {
 CPUID_VENDOR_UNKNOWN = -1,
@@ -37,6 +36,22 @@ enum cpuid_requests {
   CPUID_INTEL_ADDRESS_SIZE = (int)0x80000008
 };
 
+#define CPUID_MFS_GET_STEPPING_ID(mfs) getbits(mfs, 0, 3)
+#define CPUID_MFS_GET_MODEL(mfs) getbits(mfs, 4, 7)
+#define CPUID_MFS_GET_FAMILY_ID(mfs) getbits(mfs, 8, 11)
+#define CPUID_MFS_GET_CPU_TYPE(mfs) getbits(mfs, 12, 13)
+#define CPUID_MFS_GET_EXT_MODEL_ID(mfs) getbits(mfs, 16, 19)
+#define CPUID_MFS_GET_EXT_FAMILY_ID(mfs) getbits(mfs, 20, 27)
+
+#define CPUID_APIC_GET_BRAND_INDEX(apic) getbits(apic, 0, 7)
+#define CPUID_APIC_GET_CLFLUSH(apic) getbits(apic, 8, 15)
+#define CPUID_APIC_GET_MAX_APIC_IDS(apic) getbits(apic, 16, 23)
+#define CPUID_APIC_GET_INITIAL_APIC_ID(apic) getbits(apic, 24, 31)
+
+#define CPUID_ADDRESS_SIZE_GET_PHYSICAL_BITS(addr) getbits(addr, 0, 7)
+#define CPUID_ADDRESS_SIZE_GET_LINEAR_BITS(addr) getbits(addr, 8, 15)
+#define CPUID_ADDRESS_SIZE_SET_PHYSICAL_BITS(addr, value) withbits(addr, 0, 7, value)
+
 struct cpuid_info {
 	struct {
 		unsigned int max_cpuid;
@@ -48,27 +63,10 @@ struct cpuid_info {
 	const char * vendor_string;
 
 	//0x01
-	union {
-		unsigned int value;
-		struct {
-			unsigned int stepping_id : 4;
-			unsigned int model : 4;
-			unsigned int family_id : 4;
-			unsigned int cpu_type : 2;
-			unsigned int reserved_14_15 : 2;
-			unsigned int extended_model_id : 4;
-			unsigned int extended_family_id : 8;
-		} fields;
-	} mfs;
-	union {
-		unsigned int value;
-		struct {
-			unsigned int brand_index : 8;
-			unsigned int clflush : 8;
-			unsigned int max_apic_ids : 8;
-			unsigned int initial_apic_id : 8;
-		} fields;
-	} apic;
+    unsigned int mfs;
+	
+    unsigned int apic;
+
 	struct {
 		unsigned int ecx;
 		unsigned int edx;
@@ -97,13 +95,7 @@ struct cpuid_info {
 	// 0x80000007 tsc
 
 	// 0x80000008 max physical/linear addressable quantities
-	union {
-		unsigned int value;
-		struct {
-			unsigned int physical_address_bits : 8;
-			unsigned int linear_address_bits : 8;
-		} fields;
-	} address_size;
+    unsigned int address_size;
 };
 
 enum {
@@ -195,23 +187,34 @@ bool cpuid_extended_function_info_available();
 unsigned int cpuid_max_extended_function_cpuid();
 
 inline void cpuid(unsigned int code, unsigned int *a, unsigned int *b, unsigned int *c, unsigned int *d) {
-	unsigned int tmp[4];
-	__asm__ volatile(
+	unsigned int eax, ebx, ecx, edx;
+    eax = code;
+#ifdef __PIC__
+    __asm__ (
+        "xchgl %%ebx, %%edi;"
+        "cpuid;"
+        "xchgl %%ebx, %%edi;"
+        : "=a" (eax), "=D" (ebx), "=c" (ecx), "=d" (edx)
+        : "0" (eax)
+    );
+#else
+	__asm__ (
 		"cpuid"
-		: "=a" (tmp[0]), "=b" (tmp[1]), "=c" (tmp[2]), "=d" (tmp[3])
+		: "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
 		: "a" (code)
 	);
+#endif
 	if(a) {
-		*a = tmp[0];
+		*a = eax;
 	}
 	if(b) {
-		*b = tmp[1];
+		*b = ebx;
 	}
 	if(c) {
-		*c = tmp[2];
+		*c = ecx;
 	}
 	if(d) {
-		*d = tmp[3];
+		*d = edx;
 	}
 }
 
