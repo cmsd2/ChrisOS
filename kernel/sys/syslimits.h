@@ -1,11 +1,6 @@
 /*-
- * Copyright (c) 1982, 1986, 1991, 1993, 1994
+ * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
- * (c) UNIX System Laboratories, Inc.
- * All or some portions of this file are derived from material licensed
- * to the University of California by American Telephone and Telegraph
- * Co. or Unix System Laboratories, Inc. and are reproduced herein with
- * the permission of UNIX System Laboratories, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,39 +26,51 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)types.h	8.6 (Berkeley) 2/19/95
+ *	@(#)syslimits.h	8.1 (Berkeley) 6/2/93
  * $FreeBSD$
  */
 
-#ifndef _SYS_TYPES_H_
-#define	_SYS_TYPES_H_
+#ifndef _SYS_SYSLIMITS_H_
+#define _SYS_SYSLIMITS_H_
 
-#include <sys/cdefs.h>
-
-/* Machine type dependent parameters. */
-#include <arch/types.h>
-#include <arch/endian.h>
-
-#ifndef _SSIZE_T_DECLARED
-#define _SSIZE_T_DECLARED
-typedef __ssize_t ssize_t;
+#if !defined(_KERNEL) && !defined(_LIMITS_H_) && !defined(_SYS_PARAM_H_)
+#ifndef _SYS_CDEFS_H_
+#error this file needs sys/cdefs.h as a prerequisite
+#endif
+#ifdef __CC_SUPPORTS_WARNING
+#warning "No user-serviceable parts inside."
+#endif
 #endif
 
-#ifndef _SIZE_T_DECLARED
-#define _SIZE_T_DECLARED
-typedef __size_t size_t;
+/*
+ * Do not add any new variables here.  (See the comment at the end of
+ * the file for why.)
+ */
+#define	ARG_MAX			262144	/* max bytes for an exec function */
+#ifndef CHILD_MAX
+#define	CHILD_MAX		   40	/* max simultaneous processes */
 #endif
+#define	LINK_MAX		32767	/* max file link count */
+#define	MAX_CANON		  255	/* max bytes in term canon input line */
+#define	MAX_INPUT		  255	/* max bytes in terminal input */
+#define	NAME_MAX		  255	/* max bytes in a file name */
+#ifndef NGROUPS_MAX
+#define	NGROUPS_MAX	 	 1023	/* max supplemental group id's */
+#endif
+#ifndef OPEN_MAX
+#define	OPEN_MAX		   64	/* max open files per process */
+#endif
+#define	PATH_MAX		 1024	/* max bytes in pathname */
+#define	PIPE_BUF		  512	/* max bytes for atomic pipe writes */
+#define	IOV_MAX			 1024	/* max elements in i/o vector */
 
-typedef unsigned long long u_quad_t;
-typedef unsigned char u_char;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
-typedef unsigned short u_short;
-typedef unsigned long long u_quad_t;
-typedef long long quad_t;
-
-#ifdef _KERNEL
-
-#endif /* !_KERNEL */
-
-#endif /* !_SYS_TYPES_H_ */
+/*
+ * We leave the following values undefined to force applications to either
+ * assume conservative values or call sysconf() to get the current value.
+ *
+ * HOST_NAME_MAX
+ *
+ * (We should do this for most of the values currently defined here,
+ * but many programs are not prepared to deal with this yet.)
+ */
+#endif

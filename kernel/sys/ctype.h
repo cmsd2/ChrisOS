@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1982, 1986, 1991, 1993, 1994
+ * Copyright (c) 1982, 1988, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
  * All or some portions of this file are derived from material licensed
@@ -31,39 +31,27 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)types.h	8.6 (Berkeley) 2/19/95
  * $FreeBSD$
  */
 
-#ifndef _SYS_TYPES_H_
-#define	_SYS_TYPES_H_
-
-#include <sys/cdefs.h>
-
-/* Machine type dependent parameters. */
-#include <arch/types.h>
-#include <arch/endian.h>
-
-#ifndef _SSIZE_T_DECLARED
-#define _SSIZE_T_DECLARED
-typedef __ssize_t ssize_t;
-#endif
-
-#ifndef _SIZE_T_DECLARED
-#define _SIZE_T_DECLARED
-typedef __size_t size_t;
-#endif
-
-typedef unsigned long long u_quad_t;
-typedef unsigned char u_char;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
-typedef unsigned short u_short;
-typedef unsigned long long u_quad_t;
-typedef long long quad_t;
+#ifndef _SYS_CTYPE_H_
+#define	_SYS_CTYPE_H_
 
 #ifdef _KERNEL
 
-#endif /* !_KERNEL */
+#define isspace(c)	((c) == ' ' || ((c) >= '\t' && (c) <= '\r'))
+#define isascii(c)	(((c) & ~0x7f) == 0)
+#define isupper(c)	((c) >= 'A' && (c) <= 'Z')
+#define islower(c)	((c) >= 'a' && (c) <= 'z')
+#define isalpha(c)	(isupper(c) || islower(c))
+#define isdigit(c)	((c) >= '0' && (c) <= '9')
+#define isxdigit(c)	(isdigit(c) \
+			  || ((c) >= 'A' && (c) <= 'F') \
+			  || ((c) >= 'a' && (c) <= 'f'))
+#define isprint(c)	((c) >= ' ' && (c) <= '~')
 
-#endif /* !_SYS_TYPES_H_ */
+#define toupper(c)	((c) - 0x20 * (((c) >= 'a') && ((c) <= 'z')))
+#define tolower(c)	((c) + 0x20 * (((c) >= 'A') && ((c) <= 'Z')))
+
+#endif
+#endif /* !_SYS_CTYPE_H_ */

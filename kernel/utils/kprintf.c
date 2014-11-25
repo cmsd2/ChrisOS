@@ -34,29 +34,18 @@
  *	@(#)subr_prf.c	8.3 (Berkeley) 1/21/94
  */
 
-typedef unsigned char u_char;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
-typedef unsigned short u_short;
-typedef unsigned long long u_quad_t;
-typedef long long quad_t;
-#define NULL ((void*)0)
 #define NBBY    8               /* number of bits in a byte */
 char const hex2ascii_data[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 char * const human_units[] = { "B", "KB", "MB", "GB", "TB", "PB" };
 const int max_human_unit = sizeof(human_units) / sizeof(char *) - 1;
 #define hex2ascii(hex)  (hex2ascii_data[hex])
-#define va_list __builtin_va_list
-#define va_start __builtin_va_start
-#define va_arg __builtin_va_arg
-#define va_end __builtin_va_end
-#define toupper(c)      ((c) - 0x20 * (((c) >= 'a') && ((c) <= 'z')))
 
 #include <stdint.h>
 #include <utils/string.h>
 #include <utils/kprintf.h>
 #include <terminal/terminal.h>
 #include <sys/types.h>
+#include <sys/ctype.h>
 
 /* Max number conversion buffer length: a u_quad_t in base 2, plus NUL byte. */
 #define MAXNBUF	(sizeof(intmax_t) * NBBY + 1)

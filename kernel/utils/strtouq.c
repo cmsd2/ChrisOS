@@ -1,11 +1,9 @@
 /*-
- * Copyright (c) 1982, 1986, 1991, 1993, 1994
+ * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
- * (c) UNIX System Laboratories, Inc.
- * All or some portions of this file are derived from material licensed
- * to the University of California by American Telephone and Telegraph
- * Co. or Unix System Laboratories, Inc. and are reproduced herein with
- * the permission of UNIX System Laboratories, Inc.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,40 +28,77 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)types.h	8.6 (Berkeley) 2/19/95
- * $FreeBSD$
  */
 
-#ifndef _SYS_TYPES_H_
-#define	_SYS_TYPES_H_
-
 #include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/ctype.h>
+#include <sys/limits.h>
 
-/* Machine type dependent parameters. */
-#include <arch/types.h>
-#include <arch/endian.h>
+/*
+ * Convert a string to an unsigned quad integer.
+ *
+ * Ignores `locale' stuff.  Assumes that the upper and lower case
+ * alphabets and digits are each contiguous.
+ */
+u_quad_t
+strtouq(const char *nptr, char **endptr, int base)
+{
+	const char *s = nptr;
+	u_quad_t acc;
+	unsigned char c;
+	u_quad_t qbase, cutoff;
+	int neg, any, cutlim;
 
-#ifndef _SSIZE_T_DECLARED
-#define _SSIZE_T_DECLARED
-typedef __ssize_t ssize_t;
-#endif
-
-#ifndef _SIZE_T_DECLARED
-#define _SIZE_T_DECLARED
-typedef __size_t size_t;
-#endif
-
-typedef unsigned long long u_quad_t;
-typedef unsigned char u_char;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
-typedef unsigned short u_short;
-typedef unsigned long long u_quad_t;
-typedef long long quad_t;
-
-#ifdef _KERNEL
-
-#endif /* !_KERNEL */
-
-#endif /* !_SYS_TYPES_H_ */
+	/*
+	 * See strtoq for comments as to the logic used.
+	 */
+	do {
+		c = *s++;
+	} while (isspace(c));
+	if (c == '-') {
+		neg = 1;
+		c = *s++;
+	} else {
+		neg = 0;
+		if (c == '+')
+			c = *s++;
+	}
+	if ((base == 0 || base == 16) &&
+	    c == '0' && (*s == 'x' || *s == 'X')) {
+		c = s[1];
+		s += 2;
+		base = 16;
+	}
+	if (base == 0)
+		base = c == '0' ? 8 : 10;
+	qbase = (unsigned)base;
+	cutoff = (u_quad_t)UQUAD_MAX / qbase;
+	cutlim = (u_quad_t)UQUAD_MAX % qbase;
+	for (acc = 0, any = 0;; c = *s++) {
+		if (!isascii(c))
+			break;
+		if (isdigit(c))
+			c -= '0';
+		else if (isalpha(c))
+			c -= isupper(c) ? 'A' - 10 : 'a' - 10;
+		else
+			break;
+		if (c >= base)
+			break;
+		if (any < 0 || acc > cutoff || (acc == cutoff && c > cutlim))
+			any = -1;
+		else {
+			any = 1;
+			acc *= qbase;
+			acc += c;
+		}
+	}
+	if (any < 0) {
+		acc = UQUAD_MAX;
+	} else if (neg)
+		acc = -acc;
+	if (endptr != 0)
+		*((const char **)endptr) = any ? s - 1 : nptr;
+	return (acc);
+}

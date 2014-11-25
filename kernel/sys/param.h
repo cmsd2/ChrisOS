@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1982, 1986, 1991, 1993, 1994
+ * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  * (c) UNIX System Laboratories, Inc.
  * All or some portions of this file are derived from material licensed
@@ -31,39 +31,71 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)types.h	8.6 (Berkeley) 2/19/95
+ *	@(#)param.h	8.3 (Berkeley) 4/4/95
  * $FreeBSD$
  */
 
-#ifndef _SYS_TYPES_H_
-#define	_SYS_TYPES_H_
+#ifndef _SYS_PARAM_H_
+#define _SYS_PARAM_H_
 
-#include <sys/cdefs.h>
+#include <sys/_null.h>
 
-/* Machine type dependent parameters. */
-#include <arch/types.h>
-#include <arch/endian.h>
+#include <sys/syslimits.h>
+#include <arch/param.h>
+#include <sys/types.h>
 
-#ifndef _SSIZE_T_DECLARED
-#define _SSIZE_T_DECLARED
-typedef __ssize_t ssize_t;
+#ifndef _KERNEL
+#include <sys/limits.h>
 #endif
 
-#ifndef _SIZE_T_DECLARED
-#define _SIZE_T_DECLARED
-typedef __size_t size_t;
-#endif
+/* Bit map related macros. */
+#define	setbit(a,i)	(((unsigned char *)(a))[(i)/NBBY] |= 1<<((i)%NBBY))
+#define	clrbit(a,i)	(((unsigned char *)(a))[(i)/NBBY] &= ~(1<<((i)%NBBY)))
+#define	isset(a,i)							\
+	(((const unsigned char *)(a))[(i)/NBBY] & (1<<((i)%NBBY)))
+#define	isclr(a,i)							\
+	((((const unsigned char *)(a))[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
 
-typedef unsigned long long u_quad_t;
-typedef unsigned char u_char;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
-typedef unsigned short u_short;
-typedef unsigned long long u_quad_t;
-typedef long long quad_t;
+/* Macros for counting and rounding. */
+#ifndef howmany
+#define	howmany(x, y)	(((x)+((y)-1))/(y))
+#endif
+#define	nitems(x)	(sizeof((x)) / sizeof((x)[0]))
+#define	rounddown(x, y)	(((x)/(y))*(y))
+#define	rounddown2(x, y) ((x)&(~((y)-1)))          /* if y is power of two */
+#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))  /* to any y */
+#define	roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+#define powerof2(x)	((((x)-1)&(x))==0)
+
+/* Macros for min/max. */
+#define	MIN(a,b) (((a)<(b))?(a):(b))
+#define	MAX(a,b) (((a)>(b))?(a):(b))
 
 #ifdef _KERNEL
+/*
+ * Basic byte order function prototypes for non-inline functions.
+ */
+#ifndef LOCORE
+#ifndef _BYTEORDER_PROTOTYPED
+#define	_BYTEORDER_PROTOTYPED
+__BEGIN_DECLS
+__uint32_t	 htonl(__uint32_t);
+__uint16_t	 htons(__uint16_t);
+__uint32_t	 ntohl(__uint32_t);
+__uint16_t	 ntohs(__uint16_t);
+__END_DECLS
+#endif
+#endif
 
-#endif /* !_KERNEL */
+#ifndef lint
+#ifndef _BYTEORDER_FUNC_DEFINED
+#define	_BYTEORDER_FUNC_DEFINED
+#define	htonl(x)	__htonl(x)
+#define	htons(x)	__htons(x)
+#define	ntohl(x)	__ntohl(x)
+#define	ntohs(x)	__ntohs(x)
+#endif /* !_BYTEORDER_FUNC_DEFINED */
+#endif /* lint */
+#endif /* _KERNEL */
 
-#endif /* !_SYS_TYPES_H_ */
+#endif	/* _SYS_PARAM_H_ */
