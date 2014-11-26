@@ -25,6 +25,8 @@ int strcmp(const char * a, const char * b) {
 		}
 		a++;
 		b++;
+        ca = *a;
+        cb = *b;
 	}
 
 	if(ca) {

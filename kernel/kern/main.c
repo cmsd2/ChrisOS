@@ -24,6 +24,7 @@
 #include <arch/uart.h>
 #include <kern/cmdline.h>
 #include <tests/tests.h>
+#include <arch/acpi.h>
  
 void kmain()
 {
@@ -61,6 +62,22 @@ void kmain()
 
     kmalloc_init();
 
+    size_t size = 4096 * 100;
+    void * mem = malloc(size);
+    kprintf("Alloc'd at addr=0x%lx\n", mem);
+    memset(mem, 0xff, size);
+    free(mem);
+    kprintf("Freed mem at addr=0x%lx\n", mem);
+    mem = malloc(4096 * 10);
+    void * mem2 = malloc(4096);
+    free(mem);
+    kmalloc_print_info();
+    free(mem2);
+    kmalloc_print_info();
+
+    // need malloc, mutexes and spinlocks for this.
+    acpi_early_init();
+
     struct uart_caps caps;
     uart_fingerprint_uart(UART_COM1, &caps);
     uart_print_info(&caps);
@@ -82,19 +99,7 @@ void kmain()
 
 	apic_init(&cpu);
 
-    size_t size = 4096 * 100;
-    void * mem = malloc(size);
-    kprintf("Alloc'd at addr=0x%lx\n", mem);
-    memset(mem, 0xff, size);
-    free(mem);
-    kprintf("Freed mem at addr=0x%lx\n", mem);
-    mem = malloc(4096 * 10);
-    void * mem2 = malloc(4096);
-    free(mem);
-    kmalloc_print_info();
-    free(mem2);
-    kmalloc_print_info();
-
+    
     multiboot_print_cmdline_info();
 
     cmdline_parse(multiboot_get_cmdline());

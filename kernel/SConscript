@@ -1,6 +1,17 @@
 Import('env')
 
+if env['RELEASE']:
+    debug_flag = ' -DRELEASE'
+else:
+    debug_flag = ' -g -DDEBUG'
+if env['ACPI_DEBUG_OUTPUT']:
+    acpi_debug_flag = ' -DACPI_DEBUG_OUTPUT'
+else:
+    acpi_debug_flag = ''
+
 env = env.Clone(CFLAGS = env['CFLAGS'] + 
+    acpi_debug_flag +
+    debug_flag +
     ' -nostdlib -ffreestanding -Werror -D_KERNEL' +
     ' -I$PROJECT_ROOT/kernel/$ARCH' +
     ' -I$PROJECT_ROOT/kernel' +

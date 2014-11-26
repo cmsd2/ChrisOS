@@ -146,7 +146,7 @@
 #ifdef _KERNEL
 
 // Files provided by the kernel
-#include <arch/acpica_osl.h>
+//#include <arch/acpica_osl.h>
 
 #define ACPI_MUTEX_TYPE     ACPI_OSL_MUTEX
 
