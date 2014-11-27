@@ -82,7 +82,7 @@ void paging_init(void);
 void paging_init_kernel_page_dir(void);
 void paging_load_page_dir(struct page_directory *pd);
 void paging_init_pts(void);
-size_t paging_pt_map(struct page_table * pt, uintptr_t base_addr, size_t pages, uint32_t flags);
+size_t paging_pt_map(struct page_table * pt, uintptr_t vaddr, uintptr_t base_addr, size_t pages, uint32_t flags);
 void paging_pt_unmap(struct page_table * pt, uintptr_t vaddr, size_t pages);
 struct page_table * paging_alloc_static_pt(void);
 void paging_unmap(struct page_directory * ptd, uintptr_t base_addr, size_t size);

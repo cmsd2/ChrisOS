@@ -98,7 +98,10 @@ void paging_enable(void) {
 }
 
 void paging_flush(void) {
-    paging_enable();
+    __asm__ volatile (
+	    "mov %%cr3, %%eax\n"
+	    "mov %%eax, %%cr3"
+	    : : : "%eax");
 }
 
 /*
@@ -180,23 +183,23 @@ void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, u
 			if(!pt) {
 				panic("couldn't alloc page table");
 			} else {
-				//kprintf("allocating page table at 0x%x\n", pt);
+				kprintf("allocating page table at 0x%x\n", pt);
 			}
 		    paging_pd_install_pt(pde, pt, I86_PDE_PRESENT | I86_PDE_WRITABLE);
 		} else if(!paging_pd_entry_is_present(pde)) {
             kprintf("pd entry %lx is weird\n", *pde);
 			panic("paging pd entry is not present");
 		} else {
-			//kprintf("using already present page table\n");
+			kprintf("using already present page table\n");
 		}
 
         pt_id = paging_pt_entry_id_for_addr(vaddr);
 
 		cur_pages = MIN(pages, PT_ENTRIES - pt_id);
 
-		//kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
+		kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
 
-		paging_pt_map(pt, base_addr, cur_pages, flags);
+		paging_pt_map(pt, vaddr, base_addr, cur_pages, flags);
 
 		pages -= cur_pages;
 
@@ -257,10 +260,10 @@ struct page_table * paging_pt_for_pd_entry(pd_entry * pde) {
  * initialise a complete page table with mappings for a number of pages
  * for some memory starting at base_addr
  */
-size_t paging_pt_map(struct page_table * pt, uintptr_t base_addr, size_t pages, uint32_t flags) {
+size_t paging_pt_map(struct page_table * pt, uintptr_t vaddr, uintptr_t base_addr, size_t pages, uint32_t flags) {
 	size_t i;
 	uintptr_t addr = base_addr;
-	size_t pt_id = paging_pt_entry_id_for_addr(addr);
+	size_t pt_id = paging_pt_entry_id_for_addr(vaddr);
 	size_t pt_end_id = pt_id + pages;
 	size_t actual_pages = pages;
 
@@ -274,7 +277,7 @@ size_t paging_pt_map(struct page_table * pt, uintptr_t base_addr, size_t pages, 
 		addr += PAGE_SIZE;
 	}
 
-	//kprintf("mapped pt for frames %x to %x\n", base_addr, addr);
+	kprintf("mapped pt for frames starting 0x%lx and ending 0x%lx\n", base_addr, addr);
 
 	return actual_pages;
 }
@@ -300,12 +303,12 @@ struct page_table * paging_alloc_static_pt(void) {
 /*
  * statically allocate a pt table and map some memory immediately
  */
-struct page_table * paging_new_pt_map(uintptr_t base_addr, int pages, uint32_t flags) {
+struct page_table * paging_new_pt_map(uintptr_t vaddr, uintptr_t base_addr, int pages, uint32_t flags) {
 
 	struct page_table *pt = (struct page_table*) kalloc_static(sizeof(struct page_table), PAGE_SIZE);
 
 	if(pt) {
-		paging_pt_map(pt, base_addr, pages, flags);
+		paging_pt_map(pt, vaddr, base_addr, pages, flags);
 	}
 
 	return pt;
