@@ -60,7 +60,7 @@ MR_OVERLAP_PROTO(name, region_type, size_type) { \
 #define MRL_INSERT_PROTO(name, map_type, region_type) \
 void name##_insert(map_type *map, region_type *elem)
 
-#define MRL_INSERT_IMPL2(name, map_type, region_type, regions_list_property, address_property, size_property) \
+#define MRL_INSERT_IMPL2(name, map_type, region_type, address_type, regions_list_property, address_property, size_property) \
 MRL_INSERT_PROTO(name, map_type, region_type) { \
     region_type * cur_region; \
 \
@@ -74,8 +74,8 @@ MRL_INSERT_PROTO(name, map_type, region_type) { \
     LL_APPEND(map->regions_list_property, elem); \
 }
 
-#define MRL_INSERT_IMPL(name, map_type, region_type) \
-MRL_INSERT_IMPL2(name, map_type, region_type, regions, address, size)
+#define MRL_INSERT_IMPL(name, map_type, region_type, address_type) \
+MRL_INSERT_IMPL2(name, map_type, region_type, address_type, regions, address, size)
 
 #define MR_MERGE_PROTO(name, region_type) \
 bool name##_merge(region_type *a, region_type *b)
@@ -281,20 +281,41 @@ MRL_ADD_PROTO(name, map_type, region_type) { \
 #define MRL_ADD_IMPL(name, map_type, region_type) \
 MRL_ADD_IMPL2(name, map_type, region_type, regions, map, address, size)
 
-#define MRL_PROTOS(name, map_type, region_type) \
+#define MRL_FIND_ADDRESS_PROTO(name, map_type, region_type, address_type) \
+bool name##_find_address(map_type *map, address_type addr, region_type **region)
+
+#define MRL_FIND_ADDRESS_IMPL2(name, map_type, region_type, address_type, regions_list_property, address_property) \
+MRL_FIND_ADDRESS_PROTO(name, map_type, region_type, address_type) { \
+    region_type *cur_region; \
+\
+    LL_FOREACH(map->regions_list_property, cur_region) { \
+        if(cur_region->address_property == (address_type)addr) { \
+            *region = cur_region; \
+            return true; \
+        } \
+    } \
+    return false; \
+}
+ 
+#define MRL_FIND_ADDRESS_IMPL(name, map_type, region_type, address_type) \
+MRL_FIND_ADDRESS_IMPL2(name, map_type, region_type, address_type, regions, address)
+
+#define MRL_PROTOS(name, map_type, region_type, address_type) \
 MRL_INSERT_PROTO(name, map_type, region_type); \
 MR_MERGE_PROTO(name, region_type); \
 MRL_ADD_PROTO(name, map_type, region_type); \
 MR_CUT_PROTO(name, region_type); \
 MR_CUT_AND_STITCH_PROTO(name, map_type, region_type); \
+MRL_FIND_ADDRESS_PROTO(name, map_type, region_type, address_type); \
 MRL_SUBTRACT_PROTO(name, map_type, region_type)
 
-#define MRL_IMPLS(name, map_type, region_type) \
-MRL_INSERT_IMPL(name, map_type, region_type) \
+#define MRL_IMPLS(name, map_type, region_type, address_type) \
+MRL_INSERT_IMPL(name, map_type, region_type, address_type) \
 MR_MERGE_IMPL(name, region_type) \
 MRL_ADD_IMPL(name, map_type, region_type) \
 MR_CUT_IMPL(name, region_type) \
 MR_CUT_AND_STITCH_IMPL(name, map_type, region_type) \
+MRL_FIND_ADDRESS_IMPL(name, map_type, region_type, address_type) \
 MRL_SUBTRACT_IMPL(name, map_type, region_type)
 
 #endif

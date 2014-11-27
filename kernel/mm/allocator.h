@@ -54,7 +54,7 @@ void allocator_mem_free(struct allocator_map * map, mm_ptr_t ptr, size_t size, e
 // print available region addresses and sizes
 void allocator_print_map_info(struct allocator_map * map);
 
-MRL_PROTOS(allocator_region, struct allocator_map, struct allocator_region);
+MRL_PROTOS(allocator_region, struct allocator_map, struct allocator_region, mm_ptr_t);
 
 //other required functions for region manipulation
 //todo: move these into the protos macro

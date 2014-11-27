@@ -5,7 +5,7 @@
 
 static struct allocator_region * _free_regions;
 
-MRL_IMPLS(allocator_region, struct allocator_map, struct allocator_region)
+MRL_IMPLS(allocator_region, struct allocator_map, struct allocator_region, mm_ptr_t)
 
 void allocator_map_init(struct allocator_map * map) {
     map->regions = 0;

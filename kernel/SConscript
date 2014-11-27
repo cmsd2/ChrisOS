@@ -9,7 +9,11 @@ if env['ACPI_DEBUG_OUTPUT']:
 else:
     acpi_debug_flag = ''
 
-env = env.Clone(CFLAGS = env['CFLAGS'] + 
+symbol_file_builder = Builder(action = '$OBJCOPY --only-keep-debug $SOURCE $TARGET')
+stripped_elf_builder = Builder(action = '$OBJCOPY --strip-debug $SOURCE $TARGET')
+
+env = env.Clone(
+    CFLAGS = env['CFLAGS'] + 
     acpi_debug_flag +
     debug_flag +
     ' -nostdlib -ffreestanding -Werror -D_KERNEL' +
@@ -19,6 +23,8 @@ env = env.Clone(CFLAGS = env['CFLAGS'] +
     ' -I$PROJECT_ROOT/libs/uthash/src' +
     ' -I$PROJECT_ROOT/libs/acpica/source/include',
     LINKFLAGS = env['LINKFLAGS'] + ' -nostdlib -ffreestanding')
+env.Append(BUILDERS = {'SymbolFile':symbol_file_builder, 'StrippedElf':stripped_elf_builder})
+
 Export('env')
 
 acpica_lib = env.SConscript('#libs/acpica/SConscript')
@@ -36,5 +42,9 @@ tests_lib = SConscript('tests/SConscript')
 
 kenv = env.Clone(LIBS = kern_lib + boot_lib + utils_lib + mm_lib + ia32_lib + terminal_lib + tests_lib + acpica_lib + ['gcc'])
 kenv['_LIBFLAGS'] = '-Wl,--start-group ' + kenv['_LIBFLAGS'] + ' -Wl,--end-group'
-kenv.Program('kernel.bin', [])
+kernel = kenv.Program('kernel.bin', [])
 Depends('kernel.bin', kenv['LINKER_SCRIPT'])
+
+kenv.SymbolFile('kernel.sym', 'kernel.bin')
+kenv.StrippedElf('kernel-stripped.bin', 'kernel.bin')
+

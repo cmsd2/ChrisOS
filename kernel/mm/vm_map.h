@@ -58,6 +58,8 @@ MR_CUT_PROTO(vm_map_region, struct vm_map_region);
 
 //removes and cuts holes
 MRL_SUBTRACT_PROTO(vm_map_region, struct vm_map, struct vm_map_region);
+
+MRL_FIND_ADDRESS_PROTO(vm_map_region, struct vm_map, struct vm_map_region, vm_ptr_t);
     
 bool vm_map_region_pre_merge(struct vm_map_region *a, struct vm_map_region *b);
 

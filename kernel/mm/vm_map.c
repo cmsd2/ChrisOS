@@ -5,7 +5,7 @@
 
 static struct vm_map_region * _free_regions;
 
-MRL_IMPLS(vm_map_region, struct vm_map, struct vm_map_region)
+MRL_IMPLS(vm_map_region, struct vm_map, struct vm_map_region, vm_ptr_t)
 
 void vm_map_init(struct vm_map *map) {
     map->regions = 0;

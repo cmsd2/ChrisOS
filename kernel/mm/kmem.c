@@ -34,6 +34,38 @@ void kmem_load_layout(void) {
     allocator_range_acquire(&_kern_vm_space.vm_alloc_map, _kernel_layout.segment_start, _kernel_layout.memory_end - _kernel_layout.segment_start);
 }
 
+bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm_addr_result) {
+    size_t size = num_pages * KMEM_PAGE_SIZE;
+    uintptr_t vm_addr = kmem_vm_alloc(size);
+    if(vm_addr) {
+        kprintf("allocated vm for mapping num_pages=0x%lx kmem_page_size=0x%lx total=0x%lx\n", num_pages, KMEM_PAGE_SIZE, size);
+    } else {
+        kprintf("failed to allocate vm for mapping num_pages=0x%lx kmem_page_size=0x%lx total=0x%lx\n", num_pages, KMEM_PAGE_SIZE, size);
+        return false;
+    }
+
+    paging_map(_kernel_page_dir, p_addr, size, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE);
+
+    if(flush) {
+        paging_flush();
+    }
+
+    *vm_addr_result = vm_addr;
+}
+
+bool kmem_pages_unmap(vm_ptr_t vm_addr, bool flush) {
+    size_t size;
+    if(kmem_vm_get_size(vm_addr, &size)) {
+        paging_unmap(_kernel_page_dir, vm_addr, size);
+        kmem_vm_free(vm_addr);
+        kprintf("unmapped pages at vm_addr=0x%lx size=0x%lx\n", vm_addr, size);
+        return true;
+    } else {
+        kprintf("couldn't find mapping of pages at vm_addr=0x%lx\n", vm_addr);
+        return false;
+    }
+}
+
 bool kmem_page_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, bool flush) {
     pm_ptr_t p_addr;
     bool ok = allocator_mem_alloc(&_kern_pm_alloc_map, KMEM_PAGE_SIZE, KMEM_PAGE_SIZE, ALLOC_PM_NORMAL, &p_addr);
@@ -127,7 +159,28 @@ uintptr_t kmem_vm_alloc(size_t size) {
 }
 
 void kmem_vm_free(uintptr_t addr) {
-    vm_map_region_remove(&_kern_vm_space.vm_map, addr);
+    struct allocator_map * am = &_kern_vm_space.vm_alloc_map;
+    struct vm_map_region * region;
+
+    if(vm_map_region_find_address(&_kern_vm_space.vm_map, addr, &region)) {
+        vm_map_region_remove(&_kern_vm_space.vm_map, addr);
+        allocator_mem_free(am, addr, region->size, ALLOC_VM_KERNEL);
+    } else {
+        kprintf("tried to vm_map mem not in use at vm_addr=0x%lx\n", addr);
+        panic("double free?");
+    }
+}
+
+bool kmem_vm_get_size(vm_ptr_t vm_addr, size_t * size) {
+    struct vm_map_region * region;
+    if(vm_map_region_find_address(&_kern_vm_space.vm_map, vm_addr, &region)) {
+        *size = region->size;
+        kprintf("find region size ok: vm_addr=0x%lx size=0x%lx\n", vm_addr, region->size);
+        return true;
+    } else {
+        kprintf("find region size failed: vm_addr=0x%lx\n", vm_addr);
+    }
+    return false;
 }
 
 bool kmem_wire(uintptr_t vaddr, size_t size, enum KMEM_FLAGS flags) {

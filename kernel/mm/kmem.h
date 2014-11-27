@@ -49,6 +49,8 @@ void kmem_pages_list_free(struct kmem_page_list * page_list);
 bool kmem_pages_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, size_t num_pages, bool flush);
 void kmem_pages_free(enum alloc_region_flags flags, vm_ptr_t vm_addr, size_t num_pages, bool flush);
 
+bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm_addr_result);
+bool kmem_pages_unmap(vm_ptr_t vm_addr, bool flush);
 
 // allocate a region of naked kernel virtual address space
 uintptr_t kmem_vm_alloc(size_t size);
@@ -71,6 +73,9 @@ void * kmem_alloc(size_t size);
 // and the region of virtual address space
 // and remove the pagetable entries
 void kmem_free(void *addr);
+
+/* looks up in the vm map the size of the allocated block */
+bool kmem_vm_get_size(vm_ptr_t vm_addr, size_t * size);
 
 // print some interesting debug info
 void kmem_print_info(void);

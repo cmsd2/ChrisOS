@@ -6,6 +6,6 @@
 void acpi_init(void);
 const char * acpi_strerror(ACPI_STATUS status);
 void acpi_perror(const char * msg, ACPI_STATUS status);
-void acpi_early_init(void);
+bool acpi_tables_init(void);
 
 #endif

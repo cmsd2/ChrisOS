@@ -1,5 +1,7 @@
 #include <arch/acpica_osl.h>
 #include <mm/malloc.h>
+#include <mm/kmem.h>
+#include <utils/kprintf.h>
 
 bool implemented = false;
 
@@ -29,11 +31,13 @@ ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES * predefined_na
 }
 
 ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER * existing_table, ACPI_TABLE_HEADER ** new_table) {
-    assert(implemented);
+    *new_table = NULL;
+    return AE_OK;
 }
 
 ACPI_STATUS AcpiOsPhysicalTableOverride(ACPI_TABLE_HEADER * existing_table, ACPI_PHYSICAL_ADDRESS * new_address, UINT32 * new_table_len) {
-    assert(implemented);
+    *new_address = (ACPI_PHYSICAL_ADDRESS)NULL;
+    return AE_OK;
 }
 
 /* 9.2 Memory Management */
@@ -61,11 +65,22 @@ ACPI_STATUS AcpiOsReleaseObject(ACPI_CACHE_T * cache, void * obj) {
 #endif /* ACPI_USE_LOCAL_CACHE */
 
 void * AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys_addr, ACPI_SIZE len) {
-    assert(implemented);
+    vm_ptr_t vm_page_addr;
+    
+    // TODO too low level here
+    uintptr_t phys_page_addr = align_address_down(phys_addr, KMEM_PAGE_SIZE);
+    size_t phys_addr_offset = phys_addr - phys_page_addr;
+    size_t phys_total_size = KMEM_PAGE_ALIGN(len + phys_addr_offset);
+    assert(kmem_pages_map(phys_page_addr, phys_total_size / KMEM_PAGE_SIZE, true, &vm_page_addr));
+    vm_ptr_t vm_addr = vm_page_addr + phys_addr_offset;
+    kprintf("mapped phys_page_addr=0x%lx phys_addr=0x%lx size=0x%ld at vm_addr=0x%lx vm_page_addr=0x%lx\n", phys_page_addr, phys_addr, len, vm_addr, vm_page_addr);
+
+    return (void*)vm_addr;
 }
 
 void AcpiOsUnmapMemory(void * virtual_addr, ACPI_SIZE len) {
-    assert(implemented);
+    uintptr_t v_page_addr = align_address_down((uintptr_t)virtual_addr, KMEM_PAGE_SIZE);
+    kmem_pages_unmap(v_page_addr, true);
 }
 
 ACPI_STATUS AcpiOsGetPhysicalAddress(void * virtual_address, ACPI_PHYSICAL_ADDRESS * physical_address_result) {
@@ -209,11 +224,14 @@ ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID * pci_id, UINT32 reg, UINT64
 
 /* 9.9 Formatted Output */
 void ACPI_INTERNAL_VAR_XFACE AcpiOsPrintf(const char * format, ...) {
-    assert(implemented);
+    va_list ap;
+    va_start(ap, format);
+    kprintf(format, ap);
+    va_end(ap);
 }
 
 void AcpiOsVprintf(const char * format, va_list args) {
-    assert(implemented);
+    kprintf(format, args);
 }
 
 void AcpiOsRedirectOutput(void * destination) {

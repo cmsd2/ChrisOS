@@ -7,6 +7,9 @@ const char * const ACPI_STATUS_OK = "ok";
 const char * const ACPI_STATUS_ERROR = "error";
 const char * const ACPI_STATUS_NO_MEMORY = "out of memory";
 
+#define ACPI_MAX_INIT_TABLES 16
+static ACPI_TABLE_DESC _acpi_tables[ACPI_MAX_INIT_TABLES];
+
 const char * acpi_strerror(ACPI_STATUS status) {
     const char * status_msg;
     switch(status) {
@@ -27,16 +30,58 @@ void acpi_perror(const char * msg, ACPI_STATUS status) {
     kprintf("acpi error: %s: %s\n", msg, acpi_strerror(status));
 }
 
-void acpi_early_init(void) {
-    ACPI_STATUS result = AcpiInitializeSubsystem();
+bool acpi_tables_init(void) {
+    ACPI_STATUS result = AcpiInitializeTables(_acpi_tables, ACPI_MAX_INIT_TABLES, TRUE);
+    if(ACPI_FAILURE(result)) {
+        acpi_perror("AcpiInitializeTables", result);
+        return false;
+    } else {
+        return true;
+    }
+}
 
-    if(result != AE_OK) {
+void acpi_init(void) {
+    ACPI_STATUS result;
+   
+    result = AcpiInitializeSubsystem();
+    if(ACPI_FAILURE(result)) {
         acpi_perror("AcpiInitializeSubsystem", result);
         return;
     } else {
-        kprintf("Acpi subsystem initialized\n");
+        kprintf("Acpi subsystem initialised\n");
     }
-    //AcpiInitializeTables();
+
+    result = AcpiReallocateRootTable();
+    if(ACPI_FAILURE(result)) {
+        acpi_perror("AcpiReallocateRootTable", result);
+    } else {
+        kprintf("Acpi root tables copied\n");
+    }
+
+    result = AcpiLoadTables();
+    if(ACPI_FAILURE(result)) {
+        acpi_perror("AcpiLoadTables", result);
+    } else {
+        kprintf("Acpi tables loaded\n");
+    }
+
+    /* do stuff */
+
+#ifdef ENABLE_ACPI_MODE
+    result = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
+    if(ACPI_FAILURE(result)) {
+        acpi_perror("AcpiEnableSubsystem", result);
+    } else {
+        kprintf("Acpi hardware initialized\n");
+    }
+    
+    result = AcpiInitializeObjects(ACPI_FULL_INITIALIZATION);
+    if(ACPI_FAILURE(result)) {
+        acpi_perror("AcpiInitializeObjects", result);
+    } else {
+        kprintf("Acpi namespace objects initialized\n");
+    }
+#endif
 }
 
 // after virtual memory management enabled

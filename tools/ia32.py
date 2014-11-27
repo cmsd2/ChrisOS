@@ -14,6 +14,7 @@ def generate(env, **kwargs):
         raise Exception("unsupported arch")
     env['CC'] = sysroot + target + 'gcc'
     env['AR'] = sysroot + target + 'ar'
+    env['OBJCOPY'] = sysroot + target + 'objcopy'
     env['RANLIB'] = sysroot + target + 'ranlib'
     env['CFLAGS'] = '-D__ChrisOS__ -std=gnu99 -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow'
     env['LINKFLAGS'] = ''

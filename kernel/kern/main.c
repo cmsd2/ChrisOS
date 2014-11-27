@@ -75,8 +75,8 @@ void kmain()
     free(mem2);
     kmalloc_print_info();
 
-    // need malloc, mutexes and spinlocks for this.
-    acpi_early_init();
+    acpi_tables_init();
+    kprintf("acpi early tables init completed\n");
 
     struct uart_caps caps;
     uart_fingerprint_uart(UART_COM1, &caps);

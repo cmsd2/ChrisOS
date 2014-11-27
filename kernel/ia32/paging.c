@@ -190,14 +190,14 @@ void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, u
             kprintf("pd entry %lx is weird\n", *pde);
 			panic("paging pd entry is not present");
 		} else {
-			kprintf("using already present page table\n");
+			//kprintf("using already present page table\n");
 		}
 
         pt_id = paging_pt_entry_id_for_addr(vaddr);
 
 		cur_pages = MIN(pages, PT_ENTRIES - pt_id);
 
-		kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
+		//kprintf("mapping %u pages at vaddr 0x%x to addr 0x%x\n", cur_pages, vaddr, base_addr);
 
 		paging_pt_map(pt, vaddr, base_addr, cur_pages, flags);
 
@@ -277,7 +277,7 @@ size_t paging_pt_map(struct page_table * pt, uintptr_t vaddr, uintptr_t base_add
 		addr += PAGE_SIZE;
 	}
 
-	kprintf("mapped pt for frames starting 0x%lx and ending 0x%lx\n", base_addr, addr);
+	//kprintf("mapped pt for frames starting 0x%lx and ending 0x%lx\n", base_addr, addr);
 
 	return actual_pages;
 }
