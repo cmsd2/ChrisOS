@@ -21,6 +21,7 @@ unsigned int log2_64(uint64_t n);
 unsigned int log2_i(unsigned int n);
 unsigned int log2_l(unsigned long n);
 
+uintptr_t kalloc_dup_static(uintptr_t src, size_t size, size_t align);
 uintptr_t kalloc_static(size_t size, size_t align);
 
 /* return current or next address aligned to align bytes */

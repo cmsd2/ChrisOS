@@ -226,12 +226,12 @@ ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID * pci_id, UINT32 reg, UINT64
 void ACPI_INTERNAL_VAR_XFACE AcpiOsPrintf(const char * format, ...) {
     va_list ap;
     va_start(ap, format);
-    kprintf(format, ap);
+    //kprintf(format, ap);
     va_end(ap);
 }
 
 void AcpiOsVprintf(const char * format, va_list args) {
-    kprintf(format, args);
+    //kprintf(format, args);
 }
 
 void AcpiOsRedirectOutput(void * destination) {

@@ -25,6 +25,7 @@
 #include <kern/cmdline.h>
 #include <tests/tests.h>
 #include <arch/acpi.h>
+#include <arch/ps2.h>
  
 void kmain()
 {
@@ -44,7 +45,7 @@ void kmain()
 	kprintf("kernel mem end: 0x%x\n", _kernel_layout.memory_end);
 
 	//multiboot_print_info();
-
+    
     interrupts_init();
     pic_init();
 
@@ -55,13 +56,13 @@ void kmain()
     terminal_enable_serial_console(UART_COM1);
 
     kmem_init();
-
+ 
 	multiboot_copy_mem_map_to_allocator();
 
     kmem_load_layout();
 
     kmalloc_init();
-
+ 
     size_t size = 4096 * 100;
     void * mem = malloc(size);
     kprintf("Alloc'd at addr=0x%lx\n", mem);
@@ -74,6 +75,8 @@ void kmain()
     kmalloc_print_info();
     free(mem2);
     kmalloc_print_info();
+
+    multiboot_print_cmdline_info();
 
     acpi_tables_init();
     kprintf("acpi early tables init completed\n");
@@ -99,6 +102,7 @@ void kmain()
 
 	apic_init(&cpu);
 
+    ps2_init();
     
     multiboot_print_cmdline_info();
 
@@ -107,7 +111,7 @@ void kmain()
 
     uart_puts_sync(UART_COM1, "Hello, serial port!\n");
 
-    test_all();
+    //test_all();
 
 	kprintf("Hello, kernel world!\n");
 }

@@ -141,9 +141,16 @@ void kmemcpy_b_fwd(uint8_t * dest, uint8_t * src, size_t len) {
 }
 
 void kmemcpy_b_rev(uint8_t * dest, uint8_t * src, size_t len) {
-    for(size_t i = len - 1; i >= 0; i--) {
-		dest[i] = src[i];
+    for(size_t i = len; i > 0; i--) {
+		dest[i-1] = src[i-1];
 	}
+}
+
+#include <utils/kprintf.h>
+uintptr_t kalloc_dup_static(uintptr_t src, size_t size, size_t align) {
+    uintptr_t dest = kalloc_static(size, align);
+    memcpy((void*)dest, (void*)src, size);
+    return dest;
 }
 
 uintptr_t kalloc_static(size_t size, size_t align) {

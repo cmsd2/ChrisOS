@@ -6,6 +6,7 @@
 #include <mm/layout.h>
 #include <mm/kmem.h>
 #include <assert.h>
+#include <string.h>
 
 uint32_t _magic;
 uintptr_t _bootstrap_multiboot_info;
@@ -38,14 +39,17 @@ void load_multiboot_info(void) {
 	}
 
 	if(_multiboot_info.flags & MULTIBOOT_INFO_CMDLINE) {
-		_multiboot_info.cmdline = _bootstrap_info->cmdline + _kernel_layout.segment_start;
+        char * cmdline = (char*)(_bootstrap_info->cmdline + _kernel_layout.segment_start);
+        _multiboot_info.cmdline = kalloc_dup_static((uintptr_t)cmdline, strlen(cmdline)+1, 0);
 	}
 
 	if(_multiboot_info.flags & MULTIBOOT_INFO_MODS) {
 		_multiboot_info.mods_count = _bootstrap_info->mods_count;
-		_multiboot_info.mods_addr = _bootstrap_info->mods_addr + _kernel_layout.segment_start;
+        multiboot_uint32_t mods_addr = _bootstrap_info->mods_addr + _kernel_layout.segment_start;
+		_multiboot_info.mods_addr = kalloc_dup_static((uintptr_t)mods_addr, _multiboot_info.mods_count * sizeof(struct multiboot_mod_list), sizeof(int));
 		struct multiboot_mod_list * mods = (struct multiboot_mod_list *) (uintptr_t) _multiboot_info.mods_addr;
 		for(unsigned int i = 0; i < _multiboot_info.mods_count; i++) {
+            //todo copy to static area
 			mods[i].mod_start += _kernel_layout.segment_start;
 			mods[i].mod_end += _kernel_layout.segment_start;
 		}
@@ -59,7 +63,8 @@ void load_multiboot_info(void) {
 
 	if(_multiboot_info.flags & MULTIBOOT_INFO_MEM_MAP) {
 		_multiboot_info.mmap_length = _bootstrap_info->mmap_length;
-		_multiboot_info.mmap_addr = _bootstrap_info->mmap_addr + _kernel_layout.segment_start;
+        uintptr_t mmap_addr = _bootstrap_info->mmap_addr + _kernel_layout.segment_start;
+		_multiboot_info.mmap_addr = kalloc_dup_static(mmap_addr, _multiboot_info.mmap_length, 4);
 
 		//struct multiboot_mmap_entry * mmap = (struct multiboot_mmap_entry *) _multiboot_info.mmap_addr;
 

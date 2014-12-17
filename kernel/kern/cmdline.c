@@ -3,7 +3,7 @@
 #include <uthash.h>
 #include <utils/kprintf.h>
 
-struct cmdline_option * cmdline_options_table;
+struct cmdline_option * cmdline_options_table = NULL;
 
 enum parser_state {
     search_option_start,
@@ -20,7 +20,7 @@ bool cmdline_parse(const char * cmdline) {
     size_t option_start = -1;
     size_t value_start = -1;
 
-    char * name;
+    char * name = 0;
     char * value = 0;
     UT_array *values;
     //kprintf("creating values array\n");
@@ -82,6 +82,7 @@ bool cmdline_parse(const char * cmdline) {
     }
 
     if(name) {
+        //kprintf("found option %s\n", name);
         if(value_start != -1) {
             value = strndup(cmdline + value_start, i - value_start);
             //kprintf("found value %s end at i=%ld start=%ld\n", value, i, value_start);

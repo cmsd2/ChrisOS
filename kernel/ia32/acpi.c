@@ -10,6 +10,8 @@ const char * const ACPI_STATUS_NO_MEMORY = "out of memory";
 #define ACPI_MAX_INIT_TABLES 16
 static ACPI_TABLE_DESC _acpi_tables[ACPI_MAX_INIT_TABLES];
 
+bool _acpi_tables_loaded = false;
+
 const char * acpi_strerror(ACPI_STATUS status) {
     const char * status_msg;
     switch(status) {
@@ -35,9 +37,10 @@ bool acpi_tables_init(void) {
     if(ACPI_FAILURE(result)) {
         acpi_perror("AcpiInitializeTables", result);
         return false;
-    } else {
-        return true;
     }
+
+    _acpi_tables_loaded = true;
+    return true;
 }
 
 void acpi_init(void) {
@@ -65,6 +68,8 @@ void acpi_init(void) {
         kprintf("Acpi tables loaded\n");
     }
 
+    _acpi_tables_loaded = true;
+
     /* do stuff */
 
 #ifdef ENABLE_ACPI_MODE
@@ -84,15 +89,30 @@ void acpi_init(void) {
 #endif
 }
 
-// after virtual memory management enabled
-void acpi_late_init() {
-}
-
-void acpi_enter_acpi_mode() {
+bool acpi_tables_loaded() {
+    return _acpi_tables_loaded;
 }
 
 void acpi_install_acpi_event_handlers() {
 }
 
-void acpi_finish_init_and_start() {
+ACPI_TABLE_FADT * acpi_get_fadt() {
+    ACPI_TABLE_HEADER * table;
+    ACPI_STATUS status = AcpiGetTable(ACPI_SIG_FADT, 1, &table);
+    if(ACPI_FAILURE(status)) {
+        return 0;
+    } else if(strncmp(table->Signature, ACPI_SIG_FADT, ACPI_NAME_SIZE) == 0) {
+        return (ACPI_TABLE_FADT*)table;
+    }
+}
+
+uint16_t acpi_fadt_get_boot_arch_flags() {
+    ACPI_TABLE_FADT * table = acpi_get_fadt();
+    assert(table);
+    kprintf("acpi fadt boot_flags=0x%hx\n", table->BootFlags);
+    return table->BootFlags;
+}
+
+bool acpi_fadt_has_8042() {
+    return (acpi_fadt_get_boot_arch_flags() & ACPI_FADT_8042) != 0;
 }

@@ -51,6 +51,8 @@ bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm
     }
 
     *vm_addr_result = vm_addr;
+
+    return true;
 }
 
 bool kmem_pages_unmap(vm_ptr_t vm_addr, bool flush) {

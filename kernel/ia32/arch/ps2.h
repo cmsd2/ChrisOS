@@ -2,6 +2,8 @@
 #define IA32_ARCH_PS2_H
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <sys/param.h>
 
 #define PS2_DATA_PORT 0x60
 #define PS2_SC_PORT 0x64
@@ -49,8 +51,16 @@ typedef uint8_t ps2_ctrl_cfg_t;
 #define PS2_CTRL_CFG_GET_ZERO_BIT_3(ps2) getbit(ps2, 3)
 #define PS2_CTRL_CFG_GET_1ST_PS2_CLOCK_DISABLE(ps2) getbit(ps2, 4)
 #define PS2_CTRL_CFG_GET_2ND_PS2_CLOCK_DISABLE(ps2) getbit(ps2, 5)
-#define PS2_CTRL_CFG_GET_FIRST_PS2_TRANSLATION_ENABLE(ps2) getbit(ps2, 6)
+#define PS2_CTRL_CFG_GET_1ST_PS2_TRANSLATION_ENABLE(ps2) getbit(ps2, 6)
 #define PS2_CTRL_CFG_GET_ZERO_BIT_7(ps2) getbit(ps2, 7)
+#define PS2_CTRL_CFG_SET_1ST_PS2_INT_ENABLE(ps2, value) withbit(ps2, 0, value)
+#define PS2_CTRL_CFG_SET_2ND_PS2_INT_ENABLE(ps2, value) withbit(ps2, 1, value)
+#define PS2_CTRL_CFG_SET_SYSTEM_POST_FLAG(ps2, value) withbit(ps2, 2, value)
+#define PS2_CTRL_CFG_SET_ZERO_BIT_3(ps2, value) withbit(ps2, 3, value)
+#define PS2_CTRL_CFG_SET_1ST_PS2_CLOCK_DISABLE(ps2, value) withbit(ps2, 4, value)
+#define PS2_CTRL_CFG_SET_2ND_PS2_CLOCK_DISABLE(ps2, value) withbit(ps2, 5, value)
+#define PS2_CTRL_CFG_SET_1ST_PS2_TRANSLATION_ENABLE(ps2, value) withbit(ps2, 6, value)
+#define PS2_CTRL_CFG_SET_ZERO_BIT_7(ps2, value) withbit(ps2, 7, value)
 
 // access using commands 0xd0 and 0xd1
 typedef uint8_t ps2_ctrl_output_t;
@@ -63,8 +73,14 @@ typedef uint8_t ps2_ctrl_output_t;
 #define PS2_CTRL_OUTPUT_GET_1ST_PS2_CLOCK(ps2) getbit(ps2, 6)
 #define PS2_CTRL_OUTPUT_GET_1ST_PS2_DATA(ps2) getbit(ps2, 7)
 
-uint8_t ps2_read_data();
-uint8_t ps2_read_status();
+void ps2_init(void);
+bool ps2_probe(void);
+void ps2_wait_data_sync(void);
+uint8_t ps2_read_data(void);
+uint8_t ps2_read_status(void);
 void ps2_write_command(uint8_t command);
+void ps2_flush_output_buffer(void); // flush ps2 controller's output buffer by reading from it and discarding everything
+uint8_t ps2_read_config(void);
+void ps2_write_config(uint8_t config);
 
 #endif
