@@ -39,19 +39,18 @@ void load_multiboot_info(void) {
 	}
 
 	if(_multiboot_info.flags & MULTIBOOT_INFO_CMDLINE) {
-        char * cmdline = (char*)(_bootstrap_info->cmdline + _kernel_layout.segment_start);
-        _multiboot_info.cmdline = kalloc_dup_static((uintptr_t)cmdline, strlen(cmdline)+1, 0);
+        _multiboot_info.cmdline = multiboot_relocate_str(_bootstrap_info->cmdline);
 	}
 
 	if(_multiboot_info.flags & MULTIBOOT_INFO_MODS) {
 		_multiboot_info.mods_count = _bootstrap_info->mods_count;
-        multiboot_uint32_t mods_addr = _bootstrap_info->mods_addr + _kernel_layout.segment_start;
-		_multiboot_info.mods_addr = kalloc_dup_static((uintptr_t)mods_addr, _multiboot_info.mods_count * sizeof(struct multiboot_mod_list), sizeof(int));
+        _multiboot_info.mods_addr = multiboot_relocate_mem(_bootstrap_info->mods_addr, _bootstrap_info->mods_count * sizeof(struct multiboot_mod_list));
+        
 		struct multiboot_mod_list * mods = (struct multiboot_mod_list *) (uintptr_t) _multiboot_info.mods_addr;
 		for(unsigned int i = 0; i < _multiboot_info.mods_count; i++) {
-            //todo copy to static area
-			mods[i].mod_start += _kernel_layout.segment_start;
-			mods[i].mod_end += _kernel_layout.segment_start;
+            size_t mod_size = mods[i].mod_end - mods[i].mod_start;
+            mods[i].mod_start = multiboot_relocate_mem(mods[i].mod_start, mod_size);
+            mods[i].mod_end = mods[i].mod_start + mod_size;
 		}
 	}
 
@@ -63,8 +62,7 @@ void load_multiboot_info(void) {
 
 	if(_multiboot_info.flags & MULTIBOOT_INFO_MEM_MAP) {
 		_multiboot_info.mmap_length = _bootstrap_info->mmap_length;
-        uintptr_t mmap_addr = _bootstrap_info->mmap_addr + _kernel_layout.segment_start;
-		_multiboot_info.mmap_addr = kalloc_dup_static(mmap_addr, _multiboot_info.mmap_length, 4);
+        _multiboot_info.mmap_addr = multiboot_relocate_mem(_bootstrap_info->mmap_addr, _bootstrap_info->mmap_length);
 
 		//struct multiboot_mmap_entry * mmap = (struct multiboot_mmap_entry *) _multiboot_info.mmap_addr;
 
@@ -108,6 +106,19 @@ void load_multiboot_info(void) {
 		_multiboot_info.framebuffer_type = _bootstrap_info->framebuffer_type;
 		_multiboot_info.framebuffer_colors_u = _bootstrap_info->framebuffer_colors_u;
 	}
+}
+
+uintptr_t multiboot_relocate_mem(uintptr_t physaddr, size_t size) {
+    uintptr_t vaddr = physaddr + _kernel_layout.segment_start;
+    uintptr_t result = kalloc_dup_static(vaddr, size, sizeof(uintptr_t));
+    return result;
+}
+
+uintptr_t multiboot_relocate_str(uintptr_t physaddr) {
+    uintptr_t vaddr = physaddr + _kernel_layout.segment_start;
+    size_t size = strlen((char*)vaddr) + 1;
+    uintptr_t result = kalloc_dup_static(vaddr, size, sizeof(int));
+    return result;
 }
 
 void multiboot_copy_mem_map_to_allocator(void) {

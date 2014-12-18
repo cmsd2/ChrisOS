@@ -2,6 +2,7 @@
 #define KERNEL_MULTIBOOT_H
 
 #include <stdint.h>
+#include <sys/types.h>
 
 /* loaded by boot if available */
 extern uint32_t _magic;
@@ -9,6 +10,9 @@ extern uintptr_t _bootstrap_multiboot_info;
 extern struct multiboot_info _multiboot_info;
 
 void load_multiboot_info(void);
+
+uintptr_t multiboot_relocate_mem(uintptr_t physaddr, size_t size);
+uintptr_t multiboot_relocate_str(uintptr_t physaddr);
 
 void multiboot_copy_mem_map_to_allocator(void);
 
