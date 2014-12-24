@@ -21,9 +21,9 @@ struct interrupt_handler * _free_handlers;
 int _interrupt_nesting;
 
 void interrupts_init() {
-	idt_init();
+    idt_init();
 
-	interrupts_install_handlers();
+    interrupts_install_handlers();
 }
 
 struct interrupt_handler * interrupts_handler_alloc() {
@@ -43,7 +43,7 @@ void interrupts_handler_free(struct interrupt_handler * handler) {
 }
 
 void interrupts_install_handler(uint32_t int_no, interrupt_handler_fn handler_fn, void * data) {
-    assert(int_no < MAX_INTERRUPTS); 
+    assert(int_no < MAX_INTERRUPTS);
 
     struct interrupt_handler * handler = interrupts_handler_alloc();
     handler->handler = handler_fn;
@@ -113,10 +113,10 @@ void interrupts_isr_handler(struct registers regs)
     if(handled)
         return;
 
-	switch(regs.int_no) {
+    switch(regs.int_no) {
     case 14:
-		kprintf("page fault accessing %x\n", regs.cr2);
-		__asm__ volatile ("hlt");
+        kprintf("page fault accessing %x\n", regs.cr2);
+        __asm__ volatile ("hlt");
         break;
     case 13:
         kprintf("general protection fault\n");
@@ -124,7 +124,7 @@ void interrupts_isr_handler(struct registers regs)
         break;
     default:
         break;
-	}
+    }
 
 #ifdef REENTRANT
     interrupts_disable();
@@ -132,7 +132,7 @@ void interrupts_isr_handler(struct registers regs)
 #endif
 
     if(!interrupts_cpu_in_nested_isr()) {
-        scheduler_schedule();
+        scheduler_yield();
 
         current_thread_restore_regs(&regs);
     }

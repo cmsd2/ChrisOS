@@ -10,7 +10,7 @@
 #include <mm/allocator.h>
 #include <mm/kmem.h>
 #include <mm/malloc.h>
-#include <arch/gdt.h> //TODO: this is too arch specific
+#include <arch/gdt.h>
 #include <arch/pic.h>
 #include <arch/apic.h>
 #include <arch/msrs.h>
@@ -26,43 +26,45 @@
 #include <tests/tests.h>
 #include <arch/acpi.h>
 #include <arch/ps2.h>
- 
+#include <sys/scheduler.h>
+#include <kern/idle.h>
+
 void kmain()
 {
-	layout_init();
+    layout_init();
 
-	paging_init();
-	gdt_install();
+    paging_init();
+    gdt_install();
 
-	terminal_initialize();
+    terminal_initialize();
 
-	load_multiboot_info();
+    load_multiboot_info();
 
     paging_cleanup_bootstrap();
 
-	kprintf("kernel start: 0x%x\n", _kernel_layout.segment_start);
-	kprintf("kernel mem start: 0x%x\n", _kernel_layout.memory_start);
-	kprintf("kernel mem end: 0x%x\n", _kernel_layout.memory_end);
+    kprintf("kernel start: 0x%x\n", _kernel_layout.segment_start);
+    kprintf("kernel mem start: 0x%x\n", _kernel_layout.memory_start);
+    kprintf("kernel mem end: 0x%x\n", _kernel_layout.memory_end);
 
-	//multiboot_print_info();
-    
+    //multiboot_print_info();
+
     interrupts_init();
     pic_init();
 
-	interrupts_enable();
+    interrupts_enable();
 
     uart_init();
     uart_enable(UART_COM1);
     terminal_enable_serial_console(UART_COM1);
 
     kmem_init();
- 
-	multiboot_copy_mem_map_to_allocator();
+
+    multiboot_copy_mem_map_to_allocator();
 
     kmem_load_layout();
 
     kmalloc_init();
- 
+
     size_t size = 4096 * 100;
     void * mem = malloc(size);
     kprintf("Alloc'd at addr=0x%lx\n", mem);
@@ -85,25 +87,25 @@ void kmain()
     uart_fingerprint_uart(UART_COM1, &caps);
     uart_print_info(&caps);
 
-	kmem_print_info();
+    kmem_print_info();
 
     process_system_init();
 
-	// check interrupts work
-	__asm__("int $0x3");
-	__asm__("int $0x4");
- 
-	assert(cpuid_available());
-	assert(msrs_available());
+    // check interrupts work
+    __asm__("int $0x3");
+    __asm__("int $0x4");
 
-	struct cpuid_info cpu;
-	cpuid_read_info(&cpu);
-	//cpuid_print_info(&cpu);
+    assert(cpuid_available());
+    assert(msrs_available());
 
-	apic_init(&cpu);
+    struct cpuid_info cpu;
+    cpuid_read_info(&cpu);
+    //cpuid_print_info(&cpu);
+
+    apic_init(&cpu);
 
     ps2_init();
-    
+
     multiboot_print_cmdline_info();
 
     cmdline_parse(multiboot_get_cmdline());
@@ -113,5 +115,9 @@ void kmain()
 
     //test_all();
 
-	kprintf("Hello, kernel world!\n");
+    kprintf("Hello, kernel world!\n");
+
+    idle_thread_start();
+
+    scheduler_yield();
 }

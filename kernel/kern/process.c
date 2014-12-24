@@ -4,11 +4,9 @@
 #include <utils/mem.h>
 #include <sys/scheduler.h>
 #include <sys/thread.h>
+#include <mm/malloc.h>
 
 struct process *_processes;
-struct process _kernel_proc;
-
-struct process *_free_processes;
 
 pid_t _next_pid;
 
@@ -24,28 +22,18 @@ struct process * current_process(void)
 
 struct process * process_alloc(void) {
     struct process * p;
-    if(_free_processes) {
-        p = _free_processes;
-        LL_DELETE(_free_processes, _free_processes);
-    } else {
-        p = (struct process *)kalloc_static(sizeof(struct process), 0);
+    p = (struct process *)malloc(sizeof(struct process));
+    if(p) {
+        memset(p, 0, sizeof(struct process));
     }
-    memset(p, 0, sizeof(struct process));
     return p;
 }
 
 void process_free(struct process *p) {
-    LL_PREPEND(_free_processes, p);
+    free(p);
 }
 
 void process_system_init(void) {
-    _kernel_proc.pid = process_next_pid();
-    process_add_process(&_kernel_proc);
-
-    _current_proc = &_kernel_proc;
-    struct thread *t = thread_spawn(&_kernel_proc);
-    //TODO setup thread entry point and stack
-    //scheduler_add_thread(t);
 }
 
 void process_add_process(struct process *p) {
@@ -110,10 +98,12 @@ pid_t process_next_pid(void) {
 }
 
 void process_context_switch(struct thread * t) {
-    struct process *proc = t->proc;
+    struct process *proc = t->proc; // null for kthreads
 
-    if(_current_proc != proc) {
+    if(proc && (_current_proc != proc)) {
         _current_proc = proc;
+
+        // TODO switch address space
     }
 
     thread_context_switch(t);
@@ -127,4 +117,3 @@ void process_add_thread(struct process *p, struct thread *t) {
 void process_remove_thread(struct process *p, struct thread *t) {
     LL_DELETE(p->threads, t);
 }
-

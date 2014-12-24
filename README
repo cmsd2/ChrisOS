@@ -62,6 +62,7 @@ rust support looks easy, but i'm blocked on issue #16259 and maybe #18146
 Features done:
 
 boot from syslinux and also directly from qemu (with -kernel) on ia32
+tested on qemu, bochs and vmware fusion.
 requires multiboot, reads info from multiboot params
 jump to higher half
 handle interrupts
@@ -77,6 +78,8 @@ apic timer calibration
 round-robin scheduler
 outline of processes and threads
 basic uart driver
+bare minimum acpi library integration
+partial ps2 driver
 
 Wishlist:
 
@@ -100,7 +103,8 @@ serial port driver that doesn't spinwait
 
 Much later:
 plug and play
-acpi?
+more acpi
+more drivers
 usb?
 lots of possibilities
 
@@ -160,7 +164,7 @@ as it is, the code can't be used for a single range which covers the entire 32bi
 since size would wrap around. this won't be a problem for memory (either physical or virtual)
 since it's all carved up. could be a problem for other things later.
 
-todo: higher level malloc/slab allocator. so far we can only allocate whole numbers of pages.
+todo: higher level slab allocators and or better malloc implementation
 
 todo: use a separate allocator for each distinct zone of memory/address space,
 instead of relying on flags stored inside the allocator's regions.
@@ -174,24 +178,30 @@ todo: make sure we track used memory adequately.
 will become necessary when we're forking, paging to disk, and mmap'ing
 
 todo: process memory
-kernel threads use the kernel process's address space, which allocates areas above 3GB
+kernel threads don't need their own address space -- the kernel's memory,
+which lives above 3GB is mapped to all processes's address spaces.
+kernel threads don't belong to a separate kernel process.
 user processes have their own address space, which allocate areas between 0GB and 3GB
 each thread gets its own stack
 each process needs an initial amount of heap large enough to hold the program binary code+data
-except the kernel process which runs code directly from the kernel area.
+except the kernel threads which run code directly from the kernel area.
 
-create kernel process:
-1. no special process setup. initialise vm space.
+create kernel threads:
+1. no process setup.
 2. create main kernel thread. allocate stack page(s).
 3. initialise registers and set EIP to entry point, ESP to stack, code and data segments set for ring 0
 4. additional threads copy initial thread, but separate stack and entry point
 
-fork kernel process:
-1. duplicate address space, add to page reference count
+create pid 1:
+1. init process structs
+2. exec init process
+
+fork process:
+1. duplicate address space, add to page reference counts
 2. duplicate threads, copy stack, copy registers.
 
 exec user process:
-1. create new address space
+1. create new address space, copying from old one
 2. destroy threads
 3. create new main thread with new stack and registers. set code and data segments for ring 3
 

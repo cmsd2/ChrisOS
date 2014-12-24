@@ -3,7 +3,7 @@
 #include <arch/power.h>
 
 void panic(const char * msg) {
-	/*todo...*/
-	kprintf("panic! %s\n", msg);
+    /*todo...*/
+    kprintf("panic! %s\n", msg);
     power_halt();
 }
