@@ -17,7 +17,19 @@ struct registers
 
     // cpu's interrupt setup
     uint32_t err_code;
-    uint32_t eip, cs, eflags, useresp, ss;
+    uint32_t eip, cs, eflags;
+
+    // only if privilege change i.e. from ring 3 to 0:
+    uint32_t useresp, ss;
+
+};
+
+// stack layout for using iret between kernel threads only.
+struct iret_stack_frame {
+    uint32_t ebp;
+    uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
 };
 
 struct stack_frame {
@@ -37,5 +49,8 @@ struct context {
 
     struct stack_frame frame;
 };
+
+void push_flags_register(void);
+void pop_flags_register(void);
 
 #endif

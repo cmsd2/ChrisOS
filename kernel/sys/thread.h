@@ -29,6 +29,8 @@ struct thread {
     struct thread *scheduler_thread_next;
     struct thread *scheduler_thread_prev;
 
+    const char * name;
+
     tid_t tid;
 
     // for return after interrupt servicing
@@ -55,7 +57,7 @@ void thread_free(struct thread *t);
 void thread_system_init(void);
 void thread_entry_point(void * data) _Noreturn;
 
-struct thread * thread_spawn_kthread(thread_func f, void * data);
+struct thread * thread_spawn_kthread(thread_func f, const char * name, void * data);
 struct thread * thread_spawn(struct process *p, thread_func f, void * data);
 void thread_start(struct thread *t);
 int thread_init(struct thread *t, thread_func f, void * data);
@@ -65,5 +67,8 @@ void current_thread_save_regs(struct registers * regs);
 void current_thread_restore_regs(struct registers * regs);
 
 void thread_context_switch(struct thread *t);
+
+void current_thread_sleep(void);
+void thread_wake(struct thread *t);
 
 #endif

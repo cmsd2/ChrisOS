@@ -48,6 +48,9 @@ enum pit_bcd_binary_mode {
     pit_bcd_mode = 1
 };
 
+#define PIT_FREQUENCY 1193180 // Herz
+#define PIT_IRQ 0
+
 void pit_set_mode(enum pit_select_channel channel, enum pit_access_mode access_mode, enum pit_operating_mode mode);
 
 void pit_set_counter(enum pit_select_channel channel, uint8_t value);
@@ -55,5 +58,6 @@ void pit_set_counter(enum pit_select_channel channel, uint8_t value);
 unsigned short pit_io_port(enum pit_select_channel channel);
 
 void pit_one_shot(enum pit_select_channel channel, unsigned short ticks);
+void pit_square_wave(enum pit_select_channel channel, unsigned short ticks);
 
 #endif

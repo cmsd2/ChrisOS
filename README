@@ -52,7 +52,7 @@ mkiso.sh builds a bootable cdrom for use with qemu, virtualbox, vmware etc.
 
 
 Current problems:
-interrupt handling is messy
+interrupt handling is really messy
 paging code is too complicated
 no slab allocators yet
 too reliant on kprintf, and tiny 80x24 vga non-scrolling display :(
@@ -80,26 +80,37 @@ outline of processes and threads
 basic uart driver
 bare minimum acpi library integration
 partial ps2 driver
+ioapic setup
+acpi table loading using libacpica
+acpi apic config
+ps2 keyboard interrupt handling
+system clock with really weird frequency
+asynchronous timer callbacks
 
 Wishlist:
 
 Next:
-rust support
+fix system clock frequency 1 second != 1 second
 more complete process control blocks
 more complete kernel threads/tasks
 more complete bug-free paging
 more complete virtual memory management
-get keyboard input
+driver framework using tasks for split top/bottom half interrupt handling
+translate keyboard scancodes to useable keycodes
 framebuffer
+asynchronous programming using timers and tasks
+audit everything so far for races and concurrency bugs/flaws
+  now that we're messing with interrupts and interleaved execution
 
 Later:
+interactive console
+rust support
 Evaluate micro or monolithic designs.
 fat16
 vfs?
 better scheduler
 userspace
 syscalls
-serial port driver that doesn't spinwait
 
 Much later:
 plug and play
@@ -109,7 +120,6 @@ usb?
 lots of possibilities
 
 Much Much later and in no particular order:
-reentrancy: nested interrupt service routines, fast and slow handlers?
 userspace threads
 multiprocessor support
 port a libc for userspace

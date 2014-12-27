@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/param.h>
+#include <sys/cdefs.h>
+#include <arch/registers.h>
 
 #define PS2_DATA_PORT 0x60
 #define PS2_SC_PORT 0x64
@@ -73,14 +75,45 @@ typedef uint8_t ps2_ctrl_output_t;
 #define PS2_CTRL_OUTPUT_GET_1ST_PS2_CLOCK(ps2) getbit(ps2, 6)
 #define PS2_CTRL_OUTPUT_GET_1ST_PS2_DATA(ps2) getbit(ps2, 7)
 
+struct ps2_async_command;
+
+typedef void (*ps2_async_callback)(enum ps2_controller_command cmd, uint8_t data);
+
+struct ps2_async_command {
+    uint8_t cmd;
+    uint8_t data;
+    bool send_data;
+    ps2_async_callback callback;
+    struct ps2_async_command * next;
+    struct ps2_async_command * prev;
+};
+
+struct ps2_async_command * ps2_send_command(struct ps2_async_command * queue, uint8_t cmd, uint8_t data, ps2_async_callback callback);
+bool ps2_cancel_command(struct ps2_async_command * queue, struct ps2_async_command * cmd);
+
 void ps2_init(void);
 bool ps2_probe(void);
-void ps2_wait_data_sync(void);
+void ps2_wait_output_buffer_sync(void);
 uint8_t ps2_read_data(void);
 uint8_t ps2_read_status(void);
+void ps2_write_data(uint8_t data);
 void ps2_write_command(uint8_t command);
 void ps2_flush_output_buffer(void); // flush ps2 controller's output buffer by reading from it and discarding everything
 uint8_t ps2_read_config(void);
 void ps2_write_config(uint8_t config);
+struct ps2_async_command * ps2_command_alloc(void);
+void ps2_command_free(struct ps2_async_command * cmd);
+
+enum hal_fast_irq_handler_result
+ps2_kbd_interrupt_handler(uint32_t int_no, struct registers * regs, void * data);
+
+int ps2_kbd_thread(void * data);
+void ps2_kbd_issue_next_command(void);
+bool ps2_kbd_handle_response(void);
+
+enum ps2_driver_state {
+    waiting_command,
+    waiting_response
+};
 
 #endif

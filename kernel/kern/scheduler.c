@@ -2,6 +2,7 @@
 #include <utlist.h>
 #include <sys/thread.h>
 #include <sys/process.h>
+#include <utils/kprintf.h>
 
 struct thread * _runnable_threads;
 struct thread * _blocked_threads;
@@ -62,13 +63,15 @@ void scheduler_make_blocked(struct thread * t) {
 }
 
 void scheduler_add_thread(struct thread * t) {
-    if(t->state != thread_created) {
-        panic("invalid new thread state");
+    if(t->state == thread_created) {
+        t->state = thread_runnable;
     }
 
-    t->state = thread_runnable;
-
-    scheduler_add_runnable_thread(t);
+    if(t->state == thread_runnable) {
+        scheduler_add_runnable_thread(t);
+    } else {
+        scheduler_add_blocked_thread(t);
+    }
 }
 
 void scheduler_remove_thread(struct thread * t) {

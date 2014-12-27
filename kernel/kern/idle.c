@@ -13,7 +13,7 @@
 static struct thread * _idle_thread;
 
 int idle_thread_start(void) {
-    _idle_thread = thread_spawn_kthread(idle_thread_func, NULL);
+    _idle_thread = thread_spawn_kthread(idle_thread_func, "idle", NULL);
 
     if(!_idle_thread) {
         return -1;
@@ -25,7 +25,6 @@ int idle_thread_start(void) {
 /* doesn't return */
 int idle_thread_func(void * data __unused) {
     while(1) {
-        kprintf("hello from the idle thread!\n"); //TODO remove this or it'll generate a lot of noise
-        __asm__("hlt");
+        __asm__ volatile("hlt");
     }
 }

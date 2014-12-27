@@ -47,3 +47,11 @@ void pit_one_shot(enum pit_select_channel channel, unsigned short ticks) {
     io_wait(); // delay
     pit_set_counter(channel, HIGH_BYTE(ticks));
 }
+
+void pit_square_wave(enum pit_select_channel channel, unsigned short ticks) {
+    pit_set_mode(channel, pit_low_high_byte, pit_mode_3_square_wave_generator);
+
+    pit_set_counter(channel, LOW_BYTE(ticks) & -2);
+    io_wait();
+    pit_set_counter(channel, HIGH_BYTE(ticks));
+}

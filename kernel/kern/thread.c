@@ -50,6 +50,7 @@ int thread_init(struct thread * t, thread_func f, void * data) {
         return -1;
     }
 
+    t->name = "";
     t->stack_size = STACK_SIZE;
     t->func = f;
     t->data = data;
@@ -58,15 +59,16 @@ int thread_init(struct thread * t, thread_func f, void * data) {
     return 0;
 }
 
-struct thread * thread_spawn_kthread(thread_func f, void * data) {
+struct thread * thread_spawn_kthread(thread_func f, const char * name, void * data) {
     struct thread * t = thread_alloc();
     if(t) {
         if(0 != thread_init(t, f, data)) {
             thread_free(t);
             t = 0;
+        } else {
+            t->name = name;
+            thread_start(t);
         }
-
-        thread_start(t);
     }
     return t;
 }
@@ -125,4 +127,17 @@ void thread_context_switch(struct thread *t) {
     _current_thread = t;
 
     stack_switch(p_old_thread_ctx, t->stack_context);
+}
+
+void current_thread_sleep() {
+    struct thread * t = current_thread();
+    assert(t);
+
+    scheduler_make_blocked(t);
+
+    scheduler_yield();
+}
+
+void thread_wake(struct thread * t) {
+    scheduler_make_runnable(t);
 }

@@ -1,5 +1,6 @@
 #include <arch/acpi.h>
 #include <arch/acpica_osl.h>
+#include <arch/apic.h>
 #include <acpi.h>
 #include <utils/kprintf.h>
 
@@ -45,7 +46,7 @@ bool acpi_tables_init(void) {
 
 void acpi_init(void) {
     ACPI_STATUS result;
-   
+
     result = AcpiInitializeSubsystem();
     if(ACPI_FAILURE(result)) {
         acpi_perror("AcpiInitializeSubsystem", result);
@@ -79,7 +80,7 @@ void acpi_init(void) {
     } else {
         kprintf("Acpi hardware initialized\n");
     }
-    
+
     result = AcpiInitializeObjects(ACPI_FULL_INITIALIZATION);
     if(ACPI_FAILURE(result)) {
         acpi_perror("AcpiInitializeObjects", result);
@@ -96,6 +97,140 @@ bool acpi_tables_loaded() {
 void acpi_install_acpi_event_handlers() {
 }
 
+ACPI_TABLE_MADT * acpi_get_madt() {
+    ACPI_TABLE_HEADER * table;
+    ACPI_STATUS status = AcpiGetTable(ACPI_SIG_MADT, 1, &table);
+    if(ACPI_FAILURE(status)) {
+        return 0;
+    } else if(strncmp(table->Signature, ACPI_SIG_MADT, ACPI_NAME_SIZE) == 0) {
+        return (ACPI_TABLE_MADT*)table;
+    } else {
+        kprintf("spurious acpi table name while looking for MADT: %s\n", table->Signature);
+        return 0;
+    }
+}
+
+uint32_t acpi_get_madt_apic_address() {
+    ACPI_TABLE_MADT * table = acpi_get_madt();
+    assert(table != NULL);
+    return table->Address;
+}
+
+void acpi_madt_configure_apic_subtable(ACPI_SUBTABLE_HEADER * header) {
+    ACPI_MADT_LOCAL_APIC * lapic;
+    ACPI_MADT_IO_APIC * ioapic;
+    ACPI_MADT_INTERRUPT_OVERRIDE * int_override;
+    ACPI_MADT_NMI_SOURCE * nmi_source;
+    ACPI_MADT_LOCAL_APIC_NMI * lapic_nmi;
+    ACPI_MADT_LOCAL_APIC_OVERRIDE * lapic_override;
+    switch(header->Type) {
+    case ACPI_MADT_TYPE_LOCAL_APIC:
+        lapic = (ACPI_MADT_LOCAL_APIC*)header;
+        apic_configure_lapic(lapic->Id, lapic->ProcessorId, lapic->LapicFlags);
+        break;
+    case ACPI_MADT_TYPE_IO_APIC:
+        ioapic = (ACPI_MADT_IO_APIC*)header;
+        apic_configure_ioapic(ioapic->Id, ioapic->Address, ioapic->GlobalIrqBase);
+        break;
+    case ACPI_MADT_TYPE_INTERRUPT_OVERRIDE:
+        int_override = (ACPI_MADT_INTERRUPT_OVERRIDE*)header;
+        apic_configure_int_override(int_override->Bus, int_override->SourceIrq,
+                                    int_override->GlobalIrq, int_override->IntiFlags);
+        break;
+    case ACPI_MADT_TYPE_NMI_SOURCE:
+        nmi_source = (ACPI_MADT_NMI_SOURCE*)header;
+        apic_configure_nmi_source(nmi_source->GlobalIrq, nmi_source->IntiFlags);
+        break;
+    case ACPI_MADT_TYPE_LOCAL_APIC_NMI:
+        lapic_nmi = (ACPI_MADT_LOCAL_APIC_NMI*)header;
+        apic_configure_lapic_nmi(lapic_nmi->ProcessorId, lapic_nmi->Lint,
+                                 lapic_nmi->IntiFlags);
+        break;
+    case ACPI_MADT_TYPE_LOCAL_APIC_OVERRIDE:
+        lapic_override = (ACPI_MADT_LOCAL_APIC_OVERRIDE*)header;
+        apic_configure_lapic_override(lapic_override->Address);
+        break;
+    }
+}
+
+void acpi_configure_apic() {
+    acpi_madt_foreach_subtable(acpi_madt_configure_apic_subtable);
+}
+
+void acpi_print_subtable_header(ACPI_SUBTABLE_HEADER * header) {
+    kprintf("ACPI subtable Type=%hhd Length=%hhd\n", header->Type, header->Length);
+}
+
+void acpi_madt_print_subtable(ACPI_SUBTABLE_HEADER * header) {
+    ACPI_MADT_LOCAL_APIC * lapic;
+    ACPI_MADT_IO_APIC * ioapic;
+    ACPI_MADT_INTERRUPT_OVERRIDE * int_override;
+    ACPI_MADT_NMI_SOURCE * nmi_source;
+    ACPI_MADT_LOCAL_APIC_NMI * lapic_nmi;
+    ACPI_MADT_LOCAL_APIC_OVERRIDE * lapic_override;
+    switch(header->Type) {
+    case ACPI_MADT_TYPE_LOCAL_APIC:
+        lapic = (ACPI_MADT_LOCAL_APIC*)header;
+        kprintf("LOCAL APIC Id=%hhd ProcessorId=%hhd LApicFlags=0x%x\n",
+                lapic->Id, lapic->ProcessorId, lapic->LapicFlags);
+        break;
+    case ACPI_MADT_TYPE_IO_APIC:
+        ioapic = (ACPI_MADT_IO_APIC*)header;
+        kprintf("I/O APIC Id=%hhd Address=0x%x GlobalIrqBase=0x%x\n",
+                ioapic->Id, ioapic->Address, ioapic->GlobalIrqBase);
+        break;
+    case ACPI_MADT_TYPE_INTERRUPT_OVERRIDE:
+        int_override = (ACPI_MADT_INTERRUPT_OVERRIDE*)header;
+        kprintf("Interrupt Override Bus=%hhd SourceIrq=0x%hhx GlobalIrq=0x%x IntiFlags=0x%hx\n",
+                int_override->Bus, int_override->SourceIrq,
+                int_override->GlobalIrq, int_override->IntiFlags);
+        break;
+    case ACPI_MADT_TYPE_NMI_SOURCE:
+        nmi_source = (ACPI_MADT_NMI_SOURCE*)header;
+        kprintf("NMI Source IntiFlags=0x%hx GlobalIrq=0x%x\n",
+                nmi_source->IntiFlags, nmi_source->GlobalIrq);
+        break;
+    case ACPI_MADT_TYPE_LOCAL_APIC_NMI:
+        lapic_nmi = (ACPI_MADT_LOCAL_APIC_NMI*)header;
+        kprintf("LApic NMI ProcessorId=%hhd IntiFlags=0x%hx Lint=%hhd\n",
+                lapic_nmi->ProcessorId, lapic_nmi->IntiFlags, lapic_nmi->Lint);
+        break;
+    case ACPI_MADT_TYPE_LOCAL_APIC_OVERRIDE:
+        lapic_override = (ACPI_MADT_LOCAL_APIC_OVERRIDE*)header;
+        kprintf("LApic Override Address=0x%lx\n", lapic_override->Address);
+        break;
+    default:
+        kprintf("Subtable type was unhandled\n");
+    }
+}
+
+void acpi_madt_print_subtables() {
+    kprintf("ACPI MADT: Length=%d\n", acpi_get_madt()->Header.Length);
+    acpi_madt_foreach_subtable(acpi_madt_print_subtable);
+}
+
+void acpi_madt_foreach_subtable(acpi_subtable_handler handler) {
+    ACPI_TABLE_MADT * madt = acpi_get_madt();
+    assert(madt != NULL);
+
+    acpi_foreach_subtable(&madt->Header, (ACPI_SUBTABLE_HEADER*)(madt + 1), handler);
+}
+
+void acpi_foreach_subtable(ACPI_TABLE_HEADER * table,
+                           ACPI_SUBTABLE_HEADER * first,
+                           acpi_subtable_handler handler) {
+    ACPI_SUBTABLE_HEADER * end = (ACPI_SUBTABLE_HEADER*)((uintptr_t)table + table->Length);
+    ACPI_SUBTABLE_HEADER * subtable_header = first;
+    while(subtable_header < end) {
+        if(subtable_header->Length < sizeof(ACPI_SUBTABLE_HEADER))
+            break;
+
+        handler(subtable_header);
+
+        subtable_header = (ACPI_SUBTABLE_HEADER*)((uintptr_t)subtable_header + subtable_header->Length);
+    }
+}
+
 ACPI_TABLE_FADT * acpi_get_fadt() {
     ACPI_TABLE_HEADER * table;
     ACPI_STATUS status = AcpiGetTable(ACPI_SIG_FADT, 1, &table);
@@ -103,6 +238,9 @@ ACPI_TABLE_FADT * acpi_get_fadt() {
         return 0;
     } else if(strncmp(table->Signature, ACPI_SIG_FADT, ACPI_NAME_SIZE) == 0) {
         return (ACPI_TABLE_FADT*)table;
+    } else {
+        kprintf("spurious acpi table name while looking for FADT: %s\n", table->Signature);
+        return 0;
     }
 }
 

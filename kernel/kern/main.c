@@ -28,6 +28,13 @@
 #include <arch/ps2.h>
 #include <sys/scheduler.h>
 #include <kern/idle.h>
+#include <arch/ticks.h>
+#include <sys/hal.h>
+#include <sys/timer.h>
+
+void say_hello(timer_id_t id) {
+    kprintf("hello from timer %d\n", id);
+}
 
 void kmain()
 {
@@ -83,6 +90,8 @@ void kmain()
     acpi_tables_init();
     kprintf("acpi early tables init completed\n");
 
+    hal_init();
+
     struct uart_caps caps;
     uart_fingerprint_uart(UART_COM1, &caps);
     uart_print_info(&caps);
@@ -90,10 +99,7 @@ void kmain()
     kmem_print_info();
 
     process_system_init();
-
-    // check interrupts work
-    __asm__("int $0x3");
-    __asm__("int $0x4");
+    idle_thread_start();
 
     assert(cpuid_available());
     assert(msrs_available());
@@ -102,6 +108,7 @@ void kmain()
     cpuid_read_info(&cpu);
     //cpuid_print_info(&cpu);
 
+    kprintf("apic address = 0x%lx\n", acpi_get_madt_apic_address());
     apic_init(&cpu);
 
     ps2_init();
@@ -115,9 +122,22 @@ void kmain()
 
     //test_all();
 
+    //struct ioapic * io = ioapic_for_irq(1);
+    //ioapic_print_redirection_table(io);
+
     kprintf("Hello, kernel world!\n");
 
-    idle_thread_start();
+    acpi_madt_print_subtables();
 
+    for(int i = 1; i <= 10; i++) {
+        timer_schedule_delay(i * 1000000, say_hello);
+    }
+
+    timers_init();
+    ticks_init();
+
+    // won't get here because scheduler will be called at end of ticks interrupt handler
+    //TODO: move main code into kthread?
+    kprintf("yielding\n");
     scheduler_yield();
 }

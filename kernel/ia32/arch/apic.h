@@ -67,7 +67,7 @@ typedef unsigned int apic_lvt_t;
 #define APIC_LVT_SET_MASK(lvt, value) withbit(lvt, 16, value)
 #define APIC_LVT_SET_TIMER_MODE(lvt, value) withbits(lvt, 17, 18, value)
 
-#define APIC_LVT_PERF_GET_NMI
+#define APIC_LVT_PERF_GET_NMI //TODO what's this?
 
 // ia32 vol3 10.5. fig 10-8. lvt timer reg bits 18:17
 enum apic_timer_mode {
@@ -114,6 +114,16 @@ struct apic_base_msr {
     unsigned int low;
     unsigned int high;
 };
+
+struct ioapic {
+    uint8_t id;
+    uint32_t phys_address;
+    uintptr_t address;
+    int irq_count;
+    uint32_t irq_base;
+    struct ioapic * next;
+};
+
 #define APIC_MSR_LOW_GET_BSP(msr) getbit(msr, 8)
 #define APIC_MSR_LOW_GET_X2APIC_ENABLE(msr) getbit(msr, 10)
 #define APIC_MSR_LOW_GET_GLOBAL_ENABLE(msr) getbit(msr, 11)
@@ -137,6 +147,104 @@ typedef unsigned int apic_svr_t;
 #define APIC_SVR_SET_FOCUS_PROC_CHECKING(svr, value) withbit(svr, 9, value)
 #define APIC_SVR_SET_EOI_BROADCAST_SUPRESS(svr, value) withbit(svr, 12, value)
 
+#define APIC_SIVR 0x37
+
+// use ioapic to map interrupts 0 to 23 to the range 0x40 to 0x57
+#define APIC_IRQ_BASE (APIC_SIVR + 1)
+
+#define IOAPIC_REGSEL_ID 0x0
+#define IOAPIC_REGSEL_VER 0x1
+#define IOAPIC_REGSEL_ARB_ID 0x2
+
+// 24 entries, one for each irq line
+// each entry composed of 2 consecutive 32bit registers
+#define IOAPIC_REGSEL_REDIRECT_TBL_BASE 0x10
+#define IOAPIC_REGSEL_REDIRECT_TBL_END 0x3f
+
+#define IOAPIC_REG_ID_GET_ID(value) getbits(value, 24, 27)
+#define IOAPIC_REG_VER_GET_VER(value) getbits(value, 0, 7)
+
+// equal to number of irq lines - 1. should be 23
+#define IOAPIC_REG_VER_GET_MAX_REDIRECT(value) getbits(value, 16, 23)
+
+#define IOAPIC_REG_ARB_GET_ARB_ID(value) getbits(value, 24, 27)
+
+#define IOAPIC_IOREGSEL(apic_base) ((uint32_t*)apic_base)
+#define IOAPIC_IOWIN(apic_base) ((uint32_t*)(apic_base | 0x10))
+
+// bit 16
+enum ioapic_redirect_mask {
+    ioapic_redirect_unmasked = 0,
+    ioapic_redirect_masked = 1
+};
+
+// bit 15
+enum ioapic_trigger_mode {
+    ioapic_trigger_edge = 0,
+    ioapic_trigger_level = 1
+};
+
+// bit 14. readonly. level triggered only
+enum ioapic_remote_irr {
+    ioapic_remote_lapic_eoi = 0, // lapic has issued eoi
+    ioapic_remote_lapic_delivered = 1 // lapic has accepted interrupt
+};
+
+// bit 13
+enum ioapic_polarity {
+    ioapic_active_high = 0,
+    ioapic_active_low = 1
+};
+
+// bit 12
+enum ioapic_delivery_status {
+    ioapic_delivery_idle = 0,
+    ioapic_delivery_pending = 1 // waiting to deliver to lapic
+};
+
+// bit 11
+enum ioapic_destination_mode {
+    ioapic_dest_physical_mode = 0, // set apic id in high bits of redirection entry
+    ioapic_dest_logical_mode = 1 // set bitmask of processors in high bits
+};
+
+// bits 8:10
+enum ioapic_delivery_mode {
+    ioapic_delivery_fixed = 0, // deliver to INTR pin of all matching destination cores
+    ioapic_delivery_lowest_priority = 1, // deliver to INTR pin of 1 of the matching destination cores with lowest priority
+    ioapic_delivery_smi = 2, // use edge trigger mode. interrupt vector must be 0.
+    ioapic_delivery_reserved_3 = 3,
+    ioapic_delivery_nmi = 4, // use edge trigger mode. vector ignored.
+    ioapic_delivery_init = 5, // use edge trigger mode.
+    ioapic_delivery_reserved_6 = 6,
+    ioapic_delivery_extint = 7 // use edge trigger mode. route via external int controller which will supply the vector.
+};
+
+enum ioapic_vector {
+    ioapic_vector_min = 0x10,
+    ioapic_vector_max = 0xfe
+};
+
+#define IOAPIC_RED_GET_DESTINATION(upper) getbits(upper, 24, 31)
+#define IOAPIC_RED_GET_MASK(value) getbit(value, 16)
+#define IOAPIC_RED_GET_TRIGGER_MODE(value) getbit(value, 15)
+#define IOAPIC_RED_GET_REMOTE_IRR(value) getbit(value, 14)
+#define IOAPIC_RED_GET_POLARITY(value) getbit(value, 13)
+#define IOAPIC_RED_GET_DELIVERY_STATUS(value) getbit(value, 12)
+#define IOAPIC_RED_GET_DEST_MODE(value) getbit(value, 11)
+#define IOAPIC_RED_GET_DELIVERY_MODE(value) getbits(value, 8, 10)
+#define IOAPIC_RED_GET_INTERRUPT_VECTOR(value) getbits(value, 0, 7)
+
+#define IOAPIC_RED_SET_DESTINATION(upper, value) withbits(upper, 24, 31, value)
+#define IOAPIC_RED_SET_MASK(entry, value) withbit(entry, 16, value)
+#define IOAPIC_RED_SET_TRIGGER_MODE(entry, value) withbit(entry, 15, value)
+#define IOAPIC_RED_SET_REMOTE_IRR(entry, value) withbit(entry, 14, value)
+#define IOAPIC_RED_SET_POLARITY(entry, value) withbit(entry, 13, value)
+#define IOAPIC_RED_SET_DELIVERY_STATUS(entry, value) withbit(entry, 12, value)
+#define IOAPIC_RED_SET_DEST_MODE(entry, value) withbit(entry, 11, value)
+#define IOAPIC_RED_SET_DELIVERY_MODE(entry, value) withbits(entry, 8, 10, value)
+#define IOAPIC_RED_SET_INTERRUPT_VECTOR(entry, value) withbits(entry, 0, 7, value)
+
 void apic_init(const struct cpuid_info * cpu);
 void apic_timer_init();
 uint32_t apic_measure_timer_freq();
@@ -153,6 +261,8 @@ void apic_read_reg_32(unsigned int reg, unsigned int * value);
 void apic_write_reg_32(unsigned int reg, unsigned int value);
 void apic_sivr_enable();
 void apic_sivr_disable();
+void apic_remap_irqs(void);
+uint8_t apic_interrupt_for_irq(uint8_t irq);
 const struct apic_base_msr * apic_get_base_msr();
 void apic_lvt_write(unsigned int reg, apic_lvt_t lvt);
 void apic_lvt_read(unsigned int reg, apic_lvt_t * lvt);
@@ -162,5 +272,47 @@ void apic_timer_enable_interrupt(uint8_t int_no);
 void apic_timer_set_initial_count(unsigned int start_count);
 void apic_timer_set_divider(unsigned int div);
 unsigned int apic_timer_get_current_count();
+
+void apic_configure_lapic(uint8_t id, uint8_t processor_id, uint32_t lapic_flags);
+void apic_configure_ioapic(uint8_t id, uint32_t phys_address, uint32_t global_irq_base);
+void apic_configure_int_override(uint8_t bus, uint8_t source_irq,
+                            uint32_t global_irq, uint16_t inti_flags);
+void apic_configure_nmi_source(uint32_t global_irq, uint16_t inti_flags);
+void apic_configure_lapic_nmi(uint8_t processor_id, uint8_t lint, uint16_t inti_flags);
+void apic_configure_lapic_override(uint64_t phys_address);
+
+void ioapic_print_redirection_table(struct ioapic * i);
+struct ioapic * ioapic_alloc(void);
+void ioapic_add(struct ioapic * i);
+struct ioapic * ioapic_for_irq(uint32_t irq);
+int ioapic_compare_irq_base(struct ioapic * a, struct ioapic * b);
+
+void ioapic_remap_irqs();
+
+uint32_t ioapic_read_reg(struct ioapic * i, int regsel);
+int ioapic_get_max_redirect(struct ioapic * i);
+void ioapic_write_reg(struct ioapic * i, int regsel, uint32_t value);
+void ioapic_read_redirection_entry(struct ioapic * i, int index,
+                                   uint32_t * lower, uint32_t * upper);
+void ioapic_write_redirection_entry(struct ioapic * i, int index,
+                                    uint32_t lower, uint32_t upper);
+
+int ioapic_interrupt_for_irq(uint32_t irq);
+void ioapic_set_redirection(struct ioapic * i, int index,
+                            uint8_t destination,
+                            enum ioapic_redirect_mask masked,
+                            enum ioapic_trigger_mode trigger_mode,
+                            enum ioapic_polarity polarity,
+                            enum ioapic_destination_mode dest_mode,
+                            enum ioapic_delivery_mode delivery_mode,
+                            int interrupt_vector
+                            );
+void ioapic_setup_irq(uint32_t irq, uint8_t destination,
+                    enum ioapic_redirect_mask masked,
+                    enum ioapic_trigger_mode trigger_mode,
+                    enum ioapic_polarity polarity,
+                    enum ioapic_destination_mode dest_mode,
+                    enum ioapic_delivery_mode delivery_mode,
+                    int interrupt_vector);
 
 #endif

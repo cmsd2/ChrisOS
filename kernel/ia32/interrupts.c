@@ -14,11 +14,11 @@
 #include <sys/thread.h>
 #include <sys/scheduler.h>
 
-struct interrupt_handler * handlers[256];
+struct interrupt_handler * handlers[MAX_INTERRUPTS];
 struct interrupt_handler * _free_handlers;
 
 //TODO: needs to be per-cpu
-int _interrupt_nesting;
+static int _interrupt_nesting;
 
 void interrupts_init() {
     idt_init();
@@ -42,17 +42,24 @@ void interrupts_handler_free(struct interrupt_handler * handler) {
     LL_PREPEND(_free_handlers, handler);
 }
 
-void interrupts_install_handler(uint32_t int_no, interrupt_handler_fn handler_fn, void * data) {
+struct interrupt_handler * interrupts_install_handler(uint32_t int_no, interrupt_handler_fn handler_fn, void * data) {
     assert(int_no < MAX_INTERRUPTS);
 
     struct interrupt_handler * handler = interrupts_handler_alloc();
     handler->handler = handler_fn;
     handler->data = data;
+    handler->int_no = int_no;
 
     LL_PREPEND(handlers[int_no], handler);
+
+    return handler;
 }
 
-void interrupts_uninstall_handler(uint32_t int_no, interrupt_handler_fn handler_fn) {
+void interrupts_uninstall_handler(struct interrupt_handler * handler) {
+    LL_DELETE(handlers[handler->int_no], handler);
+}
+
+void interrupts_uninstall_handler_func(uint32_t int_no, interrupt_handler_fn handler_fn) {
     struct interrupt_handler * handler;
 
     LL_FOREACH(handlers[int_no], handler) {
@@ -65,6 +72,7 @@ void interrupts_uninstall_handler(uint32_t int_no, interrupt_handler_fn handler_
 }
 
 bool interrupts_dispatch(uint32_t int_no, struct registers * regs) {
+    assert(int_no < MAX_INTERRUPTS);
     bool result = false;
     struct interrupt_handler * handler;
     LL_FOREACH(handlers[int_no], handler) {
@@ -77,11 +85,11 @@ bool interrupts_dispatch(uint32_t int_no, struct registers * regs) {
 }
 
 void interrupts_disable() {
-	__asm__("cli");
+    __asm__("cli");
 }
 
 void interrupts_enable() {
-	__asm__("sti");
+    __asm__("sti");
 }
 
 void interrupts_cpu_enter() {
@@ -93,48 +101,40 @@ void interrupts_cpu_leave() {
 }
 
 bool interrupts_cpu_in_nested_isr() {
-    return _interrupt_nesting == 0 ? true : false;
+    return _interrupt_nesting != 0 ? true : false;
 }
 
 void interrupts_isr_handler(struct registers regs)
 {
-    if(!interrupts_cpu_in_nested_isr())
-        current_thread_save_regs(&regs);
+    //interrupts should be disabled by cpu already
 
-#ifdef REENTRANT
     interrupts_cpu_enter();
-    interrupts_enable();
-#endif
-
-	kprintf("interrupt %hhu: %hhu\n", regs.int_no, regs.err_code);
 
     bool handled = interrupts_dispatch(regs.int_no, &regs);
 
-    if(handled)
-        return;
+    if(!handled) {
+        kprintf("unhandled interrupt %hhu: %hhu\n", regs.int_no, regs.err_code);
 
-    switch(regs.int_no) {
-    case 14:
-        kprintf("page fault accessing %x\n", regs.cr2);
-        __asm__ volatile ("hlt");
-        break;
-    case 13:
-        kprintf("general protection fault\n");
-        __asm__ volatile ("hlt");
-        break;
-    default:
-        break;
+        switch(regs.int_no) {
+        case 14:
+            kprintf("page fault accessing %x\n", regs.cr2);
+            __asm__ volatile ("hlt");
+            break;
+        case 13:
+            kprintf("general protection fault\n");
+            __asm__ volatile ("hlt");
+            break;
+        default:
+            break;
+        }
     }
 
-#ifdef REENTRANT
-    interrupts_disable();
     interrupts_cpu_leave();
-#endif
 
     if(!interrupts_cpu_in_nested_isr()) {
-        scheduler_yield();
+        interrupts_enable();
 
-        current_thread_restore_regs(&regs);
+        scheduler_yield();
     }
 }
 
@@ -175,8 +175,33 @@ void interrupts_install_handlers(void) {
 	idt_set_gate(30, (uint32_t)isr30, cs, flags);
 	idt_set_gate(31, (uint32_t)isr31, cs, flags);
 
-	idt_set_gate(32, (uint32_t)isr32, cs, flags);
-	idt_set_gate(39, (uint32_t)isr39, cs, flags);
+        idt_set_gate(32, (uint32_t)isr32, cs, flags);
+
+        idt_set_gate(0x37, (uint32_t)isr0x37, cs, flags);
+        idt_set_gate(0x38, (uint32_t)isr0x38, cs, flags);
+        idt_set_gate(0x39, (uint32_t)isr0x39, cs, flags);
+        idt_set_gate(0x3a, (uint32_t)isr0x3a, cs, flags);
+        idt_set_gate(0x3b, (uint32_t)isr0x3b, cs, flags);
+        idt_set_gate(0x3c, (uint32_t)isr0x3c, cs, flags);
+        idt_set_gate(0x3d, (uint32_t)isr0x3d, cs, flags);
+        idt_set_gate(0x3e, (uint32_t)isr0x3e, cs, flags);
+        idt_set_gate(0x3f, (uint32_t)isr0x3f, cs, flags);
+        idt_set_gate(0x40, (uint32_t)isr0x40, cs, flags);
+        idt_set_gate(0x41, (uint32_t)isr0x41, cs, flags);
+        idt_set_gate(0x42, (uint32_t)isr0x42, cs, flags);
+        idt_set_gate(0x43, (uint32_t)isr0x43, cs, flags);
+        idt_set_gate(0x44, (uint32_t)isr0x44, cs, flags);
+        idt_set_gate(0x45, (uint32_t)isr0x45, cs, flags);
+        idt_set_gate(0x46, (uint32_t)isr0x46, cs, flags);
+        idt_set_gate(0x47, (uint32_t)isr0x47, cs, flags);
+        idt_set_gate(0x48, (uint32_t)isr0x48, cs, flags);
+        idt_set_gate(0x49, (uint32_t)isr0x49, cs, flags);
+        idt_set_gate(0x4a, (uint32_t)isr0x4a, cs, flags);
+        idt_set_gate(0x4b, (uint32_t)isr0x4b, cs, flags);
+        idt_set_gate(0x4c, (uint32_t)isr0x4c, cs, flags);
+        idt_set_gate(0x4d, (uint32_t)isr0x4d, cs, flags);
+        idt_set_gate(0x4e, (uint32_t)isr0x4e, cs, flags);
+        idt_set_gate(0x4f, (uint32_t)isr0x4f, cs, flags);
 
 	idt_flush();
 }

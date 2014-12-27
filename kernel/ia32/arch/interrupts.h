@@ -11,12 +11,10 @@
 
 #define MAX_INTERRUPTS 256
 
-//TODO defining this allows nested interrupts. needs locks and more thought
-#undef REENTRANT
-
 typedef bool (*interrupt_handler_fn)(uint32_t int_no, struct registers * regs, void * data);
 
 struct interrupt_handler {
+    uint32_t int_no;
     struct interrupt_handler * next;
     interrupt_handler_fn handler;
     void * data;
@@ -29,8 +27,9 @@ void interrupts_install_handlers(void);
 void interrupts_isr_handler(struct registers);
 struct interrupt_handler * interrupts_handler_alloc();
 void interrupts_handler_free(struct interrupt_handler * handler);
-void interrupts_install_handler(uint32_t int_no, interrupt_handler_fn handler_fn, void * data);
-void interrupts_uninstall_handler(uint32_t int_no, interrupt_handler_fn handler_fn);
+struct interrupt_handler * interrupts_install_handler(uint32_t int_no, interrupt_handler_fn handler_fn, void * data);
+void interrupts_uninstall_handler(struct interrupt_handler * handler);
+void interrupts_uninstall_handler_func(uint32_t int_no, interrupt_handler_fn handler_fn);
 bool interrupts_dispatch(uint32_t int_no, struct registers * regs);
 void interrupts_cpu_enter();
 void interrupts_cpu_leave();
@@ -70,6 +69,31 @@ extern void isr30(void);
 extern void isr31(void);
 
 extern void isr32(void);
-extern void isr39(void);
+
+extern void isr0x37(void);
+extern void isr0x38(void);
+extern void isr0x39(void);
+extern void isr0x3a(void);
+extern void isr0x3b(void);
+extern void isr0x3c(void);
+extern void isr0x3d(void);
+extern void isr0x3e(void);
+extern void isr0x3f(void);
+extern void isr0x40(void);
+extern void isr0x41(void);
+extern void isr0x42(void);
+extern void isr0x43(void);
+extern void isr0x44(void);
+extern void isr0x45(void);
+extern void isr0x46(void);
+extern void isr0x47(void);
+extern void isr0x48(void);
+extern void isr0x49(void);
+extern void isr0x4a(void);
+extern void isr0x4b(void);
+extern void isr0x4c(void);
+extern void isr0x4d(void);
+extern void isr0x4e(void);
+extern void isr0x4f(void);
 
 #endif
