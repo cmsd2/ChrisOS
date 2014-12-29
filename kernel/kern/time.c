@@ -1,22 +1,36 @@
 #include <sys/time.h>
 #include <arch/interrupts.h>
+#include <sys/spinlock.h>
 
 static struct timeval _time_now_utc;
+static struct spinlock _time_lock;
+
+void time_init() {
+    spinlock_init(&_time_lock);
+}
+
+uint32_t time_lock() {
+    return spinlock_acquire(&_time_lock);
+}
+
+void time_unlock(uint32_t flags) {
+    spinlock_release(&_time_lock, flags);
+}
 
 void get_time_utc(struct timeval * tv) {
-    uint32_t flags = interrupts_enter_cli(flags);
+    uint32_t flags = time_lock();
 
     *tv = _time_now_utc;
 
-    interrupts_leave_cli(flags);
+    time_unlock(flags);
 }
 
 void set_time_utc(struct timeval * tv) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = time_lock();
 
     _time_now_utc = *tv;
 
-    interrupts_leave_cli(flags);
+    time_unlock(flags);
 }
 
 void time_add(struct timeval * dest, struct timeval * diff) {

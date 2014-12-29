@@ -3,11 +3,16 @@
 
 #include <sys/thread.h>
 
+void scheduler_init(void);
+
 // select a runnable thread and switch to it
-void scheduler_yield();
+void scheduler_yield(void);
+
+uint32_t scheduler_lock(void);
+void scheduler_unlock(uint32_t flags);
 
 // select a runnable thread
-struct thread * scheduler_next_thread();
+struct thread * scheduler_next_thread(void);
 
 // mark a thread as runnable
 void scheduler_make_runnable(struct thread * t);

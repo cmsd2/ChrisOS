@@ -54,6 +54,7 @@ struct thread {
 };
 
 struct thread * current_thread(void);
+tid_t current_thread_id(void);
 
 struct thread * thread_alloc(void);
 void thread_free(struct thread *t);

@@ -15,6 +15,9 @@ void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags fl
 void free(void * mem);
 void * realloc(void * ptr, size_t bytes);
 
+uint32_t malloc_lock(void);
+void malloc_unlock(uint32_t flags);
+
 // info about each chunk of mem. stored inside mem at start.
 // TODO storing at start makes page aligning within tricky
 struct kmalloc_block {

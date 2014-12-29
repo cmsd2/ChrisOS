@@ -3,10 +3,13 @@
 #include <mm/kmem.h>
 #include <utils/kprintf.h>
 #include <arch/interrupts.h>
+#include <sys/spinlock.h>
 
 struct allocator_map _malloc_avail_mem;
+struct spinlock _malloc_lock;
 
 void kmalloc_init(void) {
+    spinlock_init(&_malloc_lock);
     allocator_map_init(&_malloc_avail_mem);
 }
 
@@ -18,7 +21,7 @@ void kmalloc_print_info(void) {
 // return 0 on failure
 // return ptr to kernel memory area at least as big as size bytes otherwise
 void * malloc(size_t size) {
-    uint32_t flags = interrupts_enter_cli(); //TODO: find a better way to do locking
+    uint32_t flags = malloc_lock(); //TODO: find a better way to do locking
 
     bool ok;
     struct kmalloc_block * block;
@@ -55,7 +58,7 @@ void * malloc(size_t size) {
         result = 0;
     }
 
-    interrupts_leave_cli(flags);
+    malloc_unlock(flags);
 
     return result;
 }
@@ -66,7 +69,7 @@ void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags fl
 }
 
 void free(void * mem) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = malloc_lock();
 
     if(mem) {
         struct kmalloc_block * block;
@@ -75,7 +78,7 @@ void free(void * mem) {
         allocator_mem_free(&_malloc_avail_mem, (mm_ptr_t)block, block->block_size, 0); //TODO check alloc flags
     }
 
-    interrupts_leave_cli(flags);
+    malloc_unlock(flags);
 }
 
 void * realloc(void * ptr, size_t size) {
@@ -88,4 +91,12 @@ void * realloc(void * ptr, size_t size) {
     }
 
     return new_ptr;
+}
+
+uint32_t malloc_lock() {
+    return spinlock_acquire(&_malloc_lock);
+}
+
+void malloc_unlock(uint32_t flags) {
+    spinlock_release(&_malloc_lock, flags);
 }

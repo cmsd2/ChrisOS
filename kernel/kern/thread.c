@@ -18,6 +18,18 @@ struct thread * current_thread(void) {
     return _current_thread;
 }
 
+tid_t current_thread_id(void) {
+    return _current_thread ? _current_thread->tid : 0;
+}
+
+tid_t thread_next_id() {
+    _next_tid++;
+    if(_next_tid == 0) {
+        _next_tid = 1;
+    }
+    return _next_tid;
+}
+
 struct thread * thread_alloc(void) {
     struct thread *t = malloc(sizeof(struct thread));
     if(t) {

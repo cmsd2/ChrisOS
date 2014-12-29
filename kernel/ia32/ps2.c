@@ -81,6 +81,7 @@ void ps2_init() {
         ps2_write_config(config);
     }
 
+    kprintf("installing ps2 keyboard irq handler\n");
     hal_install_irq_handler(1, ps2_kbd_interrupt_handler, ps2_kbd_thread, "ps2_kbd", NULL);
 }
 

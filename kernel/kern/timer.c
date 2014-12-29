@@ -4,6 +4,7 @@
 #include <sys/scheduler.h>
 #include <arch/interrupts.h>
 #include <utils/kprintf.h>
+#include <sys/spinlock.h>
 
 #define NEAR_THRESHOLD_SECS 10
 
@@ -12,10 +13,20 @@ static timer_id_t _next_timer_id;
 static struct timer_at_time * _far_timers;
 static struct timer_at_offset * _near_timers;
 static struct thread * _timer_thread;
+static struct spinlock _timer_lock;
 
 void timers_init() {
     _timer_thread = thread_spawn_kthread(timer_thread, "timer", NULL);
     assert(_timer_thread);
+    spinlock_init(&_timer_lock);
+}
+
+uint32_t timers_lock() {
+    return spinlock_acquire(&_timer_lock);
+}
+
+void timers_unlock(uint32_t flags) {
+    spinlock_release(&_timer_lock, flags);
 }
 
 timer_id_t timer_next_id() {
@@ -63,7 +74,7 @@ int timer_near_timers_cmp(struct timer_at_offset * a, struct timer_at_offset * b
 }
 
 timer_id_t timer_schedule_at(struct timeval * time, timer_callback callback, void * data) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = timers_lock();
 
     timer_id_t result;
     assert(time);
@@ -80,7 +91,7 @@ timer_id_t timer_schedule_at(struct timeval * time, timer_callback callback, voi
         result = -1;
     }
 
-    interrupts_leave_cli(flags);
+    timers_unlock(flags);
     return result;
 }
 
@@ -100,7 +111,7 @@ struct timer_at_offset * timer_schedule_delay_with_id(timer_id_t id, suseconds_t
 }
 
 timer_id_t timer_schedule_delay(suseconds_t useconds, timer_callback callback, void * data) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = timers_lock();
 
     timer_id_t id = timer_next_id();
 
@@ -109,13 +120,13 @@ timer_id_t timer_schedule_delay(suseconds_t useconds, timer_callback callback, v
         id = -1;
     }
 
-    interrupts_leave_cli(flags);
+    timers_unlock(flags);
 
     return id;
 }
 
 bool timer_cancel(timer_id_t id) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = timers_lock();
 
     bool result = false;
     struct timer_at_offset *nt;
@@ -138,7 +149,7 @@ bool timer_cancel(timer_id_t id) {
     }
 
  _cancel_cleanup:
-    interrupts_leave_cli(flags);
+    timers_unlock(flags);
     return result;
 }
 
@@ -158,7 +169,7 @@ int timer_thread(void * data __unused) {
 // returns 0 if next timer is due now or since we last checked
 // returns number of microseconds until next timer due otherwise
 suseconds_t timers_next_delay() {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = timers_lock();
 
     struct timer_at_offset * timer = _near_timers;
     suseconds_t result;
@@ -173,13 +184,13 @@ suseconds_t timers_next_delay() {
         result = -1;
     }
 
-    interrupts_leave_cli(flags);
+    timers_unlock(flags);
 
     return result;
 }
 
 bool timers_handle_near_timers(void) {
-    uint32_t flags = interrupts_enter_cli(flags);
+    uint32_t flags = timers_lock();
 
     struct timer_at_offset * timer = _near_timers;
     bool result;
@@ -195,13 +206,13 @@ bool timers_handle_near_timers(void) {
         result = false;
     }
 
-    interrupts_leave_cli(flags);
+    timers_unlock(flags);
 
     return result;
 }
 
 void timers_update_far_timers() {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = timers_lock();
 
     struct timeval now;
     get_time_utc(&now);
@@ -219,11 +230,11 @@ void timers_update_far_timers() {
         }
     }
 
-    interrupts_leave_cli(flags);
+    timers_unlock(flags);
 }
 
 void timers_convert_far_to_near(struct timer_at_time * ft) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = timers_lock();
 
     struct timeval now;
     get_time_utc(&now);
@@ -236,12 +247,12 @@ void timers_convert_far_to_near(struct timer_at_time * ft) {
     DL_DELETE(_far_timers, ft);
     nt = timer_schedule_delay_with_id(ft->id, usecs, ft->callback, ft->data);
 
-    interrupts_leave_cli(flags);
+    timers_unlock(flags);
 }
 
 // runs in IRQ context
 void timers_advance_clock(useconds_t usecs) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = timers_lock();
 
     struct timer_at_offset * nt;
     DL_FOREACH(_near_timers, nt) {
@@ -250,7 +261,7 @@ void timers_advance_clock(useconds_t usecs) {
 
     timers_update_far_timers();
 
-    interrupts_enter_cli(flags);
+    timers_unlock(flags);
 }
 
 // runs in IRQ context

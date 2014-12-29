@@ -4,18 +4,32 @@
 #include <sys/process.h>
 #include <utils/kprintf.h>
 #include <arch/interrupts.h>
+#include <sys/spinlock.h>
 
 struct thread * _runnable_threads;
 struct thread * _blocked_threads;
+struct spinlock _sched_lock;
+
+void scheduler_init() {
+    spinlock_init(&_sched_lock);
+}
+
+uint32_t scheduler_lock() {
+    return spinlock_acquire(&_sched_lock);
+}
+
+void scheduler_unlock(uint32_t flags) {
+    spinlock_release(&_sched_lock, flags);
+}
 
 // simple round-robin scheduler with no priorities
 // can be called from IRQ context
 void scheduler_yield() {
-    uint32_t flags = interrupts_enter_cli(flags);
+    uint32_t flags = scheduler_lock();
 
     struct thread * new_thread = scheduler_next_thread();
 
-    interrupts_leave_cli(flags);
+    scheduler_unlock(flags);
 
     if(new_thread) {
         process_context_switch(new_thread);
@@ -56,7 +70,8 @@ struct thread * scheduler_next_thread() {
 }
 
 void scheduler_make_runnable(struct thread * t) {
-    uint32_t flags = interrupts_enter_cli(flags);
+    uint32_t flags = scheduler_lock();
+
     assert(t->state != thread_running);
 
     if(t->state != thread_runnable) {
@@ -67,11 +82,11 @@ void scheduler_make_runnable(struct thread * t) {
         scheduler_add_runnable_thread(t);
     }
 
-    interrupts_leave_cli(flags);
+    scheduler_unlock(flags);
 }
 
 void scheduler_make_blocked(struct thread * t) {
-    uint32_t flags = interrupts_enter_cli(flags);
+    uint32_t flags = scheduler_lock();
 
     if(t->state != thread_blocked) {
         scheduler_remove_thread(t);
@@ -82,11 +97,11 @@ void scheduler_make_blocked(struct thread * t) {
         scheduler_add_blocked_thread(t);
     }
 
-    interrupts_leave_cli(flags);
+    scheduler_unlock(flags);
 }
 
 void scheduler_add_thread(struct thread * t) {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = scheduler_lock();
     assert(t->state != thread_running);
 
     if(t->state == thread_created) {
@@ -101,7 +116,7 @@ void scheduler_add_thread(struct thread * t) {
         scheduler_add_blocked_thread(t);
     }
 
-    interrupts_leave_cli(flags);
+    scheduler_unlock(flags);
 }
 
 void scheduler_remove_thread(struct thread * t) {
@@ -135,25 +150,25 @@ void scheduler_remove_blocked_thread(struct thread * t) {
 }
 
 int scheduler_count_runnable_threads() {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = scheduler_lock();
     struct thread * t;
     int count = 0;
-    DL_COUNT(_runnable_threads, t, count);
-    interrupts_leave_cli(flags);
+    DL_COUNT2(_runnable_threads, t, count, scheduler_thread_next);
+    scheduler_unlock(flags);
     return count;
 }
 
 int scheduler_count_blocked_threads() {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = scheduler_lock();
     struct thread * t;
     int count = 0;
-    DL_COUNT(_blocked_threads, t, count);
-    interrupts_leave_cli(flags);
+    DL_COUNT2(_blocked_threads, t, count, scheduler_thread_next);
+    scheduler_unlock(flags);
     return count;
 }
 
 void scheduler_print_threads() {
-    uint32_t flags = interrupts_enter_cli();
+    uint32_t flags = scheduler_lock();
 
     struct thread * t;
     kprintf("runnable: ");
@@ -168,5 +183,5 @@ void scheduler_print_threads() {
     }
     kprintf("\n");
 
-    interrupts_leave_cli(flags);
+    scheduler_unlock(flags);
 }

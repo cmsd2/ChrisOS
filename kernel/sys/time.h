@@ -12,6 +12,11 @@ struct timeval {
     suseconds_t tv_usec;
 };
 
+void time_init(void);
+
+uint32_t time_lock();
+void time_unlock(uint32_t flags);
+
 void get_time_utc(struct timeval * tv);
 void set_time_utc(struct timeval * tv);
 

@@ -29,7 +29,7 @@ void interrupts_init() {
 uint32_t interrupts_enter_cli() {
     uint32_t flags;
     push_flags_register();
-    __asm__ volatile("movl 0(%%esp), %0\n" : "=r"(flags));
+    __asm__ volatile("popl %0\n" : "=a"(flags));
     interrupts_disable();
     return flags;
 }
@@ -119,6 +119,10 @@ void interrupts_isr_handler(struct registers regs)
 
     interrupts_cpu_enter();
 
+#ifdef REENTRANT_INTERRUPTS
+    interrupts_enable();
+#endif
+
     bool handled = interrupts_dispatch(regs.int_no, &regs);
 
     if(!handled) {
@@ -138,6 +142,10 @@ void interrupts_isr_handler(struct registers regs)
             break;
         }
     }
+
+#ifdef REENTRANT_INTERRUPTS
+    interrupts_disable();
+#endif
 
     interrupts_cpu_leave();
 

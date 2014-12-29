@@ -90,6 +90,16 @@ void kmain()
     acpi_tables_init();
     kprintf("acpi early tables init completed\n");
 
+    assert(cpuid_available());
+    assert(msrs_available());
+
+    struct cpuid_info cpu;
+    cpuid_read_info(&cpu);
+    //cpuid_print_info(&cpu);
+
+    kprintf("apic address = 0x%lx\n", acpi_get_madt_apic_address());
+    apic_init(&cpu);
+
     hal_init();
 
     struct uart_caps caps;
@@ -100,16 +110,6 @@ void kmain()
 
     process_system_init();
     idle_thread_start();
-
-    assert(cpuid_available());
-    assert(msrs_available());
-
-    struct cpuid_info cpu;
-    cpuid_read_info(&cpu);
-    //cpuid_print_info(&cpu);
-
-    kprintf("apic address = 0x%lx\n", acpi_get_madt_apic_address());
-    apic_init(&cpu);
 
     ps2_init();
 

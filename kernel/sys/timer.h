@@ -31,6 +31,9 @@ struct timer_at_offset {
 
 void timers_init(void);
 
+uint32_t timers_lock();
+void timers_unlock(uint32_t flags);
+
 timer_id_t timer_next_id(void);
 
 struct timer_at_time * timer_at_time_alloc();
