@@ -217,7 +217,10 @@ ps2_kbd_interrupt_handler(uint32_t int_no,
 int ps2_kbd_thread(void * data __unused) {
 
     while(1) {
-        kprintf("ps2_kbd_thread started\n");
+        kprintf("ps2_kbd_thread woken up\n");
+        current_thread_sleep_usecs(1000000);
+        current_thread_sleep_usecs(1000000);
+        kprintf("ps2_kbd_thread going to sleep\n");
         current_thread_sleep();
     }
 

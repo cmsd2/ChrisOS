@@ -314,5 +314,7 @@ void ioapic_setup_irq(uint32_t irq, uint8_t destination,
                     enum ioapic_destination_mode dest_mode,
                     enum ioapic_delivery_mode delivery_mode,
                     int interrupt_vector);
+void ioapic_mask_irq(uint32_t irq);
+void ioapic_unmask_irq(uint32_t irq);
 
 #endif

@@ -1,13 +1,22 @@
 #include <sys/time.h>
+#include <arch/interrupts.h>
 
 static struct timeval _time_now_utc;
 
 void get_time_utc(struct timeval * tv) {
+    uint32_t flags = interrupts_enter_cli(flags);
+
     *tv = _time_now_utc;
+
+    interrupts_leave_cli(flags);
 }
 
 void set_time_utc(struct timeval * tv) {
+    uint32_t flags = interrupts_enter_cli();
+
     _time_now_utc = *tv;
+
+    interrupts_leave_cli(flags);
 }
 
 void time_add(struct timeval * dest, struct timeval * diff) {

@@ -2,12 +2,13 @@
 #include <mm/allocator.h>
 #include <mm/kmem.h>
 #include <utils/kprintf.h>
+#include <arch/interrupts.h>
 
 struct allocator_map _malloc_avail_mem;
 
 void kmalloc_init(void) {
     allocator_map_init(&_malloc_avail_mem);
-} 
+}
 
 void kmalloc_print_info(void) {
     kprintf("kmalloc info:\n");
@@ -17,6 +18,8 @@ void kmalloc_print_info(void) {
 // return 0 on failure
 // return ptr to kernel memory area at least as big as size bytes otherwise
 void * malloc(size_t size) {
+    uint32_t flags = interrupts_enter_cli(); //TODO: find a better way to do locking
+
     bool ok;
     struct kmalloc_block * block;
 
@@ -43,13 +46,18 @@ void * malloc(size_t size) {
         }
     }
 
+    void * result;
     if(ok) {
         block->block_size = block_size;
         block->data_size = size;
-        return &block->data;
+        result = &block->data;
     } else {
-        return 0;
+        result = 0;
     }
+
+    interrupts_leave_cli(flags);
+
+    return result;
 }
 
 void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags flags) {
@@ -58,12 +66,16 @@ void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags fl
 }
 
 void free(void * mem) {
+    uint32_t flags = interrupts_enter_cli();
+
     if(mem) {
         struct kmalloc_block * block;
         block = STRUCT_START(struct kmalloc_block, data, mem);
 
         allocator_mem_free(&_malloc_avail_mem, (mm_ptr_t)block, block->block_size, 0); //TODO check alloc flags
     }
+
+    interrupts_leave_cli(flags);
 }
 
 void * realloc(void * ptr, size_t size) {
@@ -77,4 +89,3 @@ void * realloc(void * ptr, size_t size) {
 
     return new_ptr;
 }
-

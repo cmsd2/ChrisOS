@@ -26,6 +26,19 @@ void interrupts_init() {
     interrupts_install_handlers();
 }
 
+uint32_t interrupts_enter_cli() {
+    uint32_t flags;
+    push_flags_register();
+    __asm__ volatile("movl 0(%%esp), %0\n" : "=r"(flags));
+    interrupts_disable();
+    return flags;
+}
+
+void interrupts_leave_cli(uint32_t flags) {
+    __asm__ volatile("pushl %0" : : "r"(flags));
+    pop_flags_register();
+}
+
 struct interrupt_handler * interrupts_handler_alloc() {
     struct interrupt_handler * handler;
     if(!_free_handlers) {
@@ -73,23 +86,19 @@ void interrupts_uninstall_handler_func(uint32_t int_no, interrupt_handler_fn han
 
 bool interrupts_dispatch(uint32_t int_no, struct registers * regs) {
     assert(int_no < MAX_INTERRUPTS);
+
     bool result = false;
+    int count = 0;
     struct interrupt_handler * handler;
     LL_FOREACH(handlers[int_no], handler) {
+        count++;
         result = handler->handler(int_no, regs, handler->data);
         if(result) {
             break;
         }
     }
+
     return result;
-}
-
-void interrupts_disable() {
-    __asm__("cli");
-}
-
-void interrupts_enable() {
-    __asm__("sti");
 }
 
 void interrupts_cpu_enter() {
@@ -114,6 +123,7 @@ void interrupts_isr_handler(struct registers regs)
 
     if(!handled) {
         kprintf("unhandled interrupt %hhu: %hhu\n", regs.int_no, regs.err_code);
+        registers_dump(&regs);
 
         switch(regs.int_no) {
         case 14:

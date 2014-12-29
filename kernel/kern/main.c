@@ -32,7 +32,7 @@
 #include <sys/hal.h>
 #include <sys/timer.h>
 
-void say_hello(timer_id_t id) {
+void say_hello(timer_id_t id, void * data __unused) {
     kprintf("hello from timer %d\n", id);
 }
 
@@ -122,15 +122,16 @@ void kmain()
 
     //test_all();
 
-    //struct ioapic * io = ioapic_for_irq(1);
-    //ioapic_print_redirection_table(io);
+    struct ioapic * io = ioapic_for_irq(1);
+    ioapic_print_redirection_table(io);
+    //ioapic_mask_irq(1);
 
     kprintf("Hello, kernel world!\n");
 
     acpi_madt_print_subtables();
 
     for(int i = 1; i <= 10; i++) {
-        timer_schedule_delay(i * 1000000, say_hello);
+        timer_schedule_delay(i * 1000000, say_hello, NULL);
     }
 
     timers_init();

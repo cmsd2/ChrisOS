@@ -24,4 +24,8 @@ void scheduler_remove_thread(struct thread * t);
 void scheduler_remove_runnable_thread(struct thread * t);
 void scheduler_remove_blocked_thread(struct thread * t);
 
+int scheduler_count_runnable_threads();
+int scheduler_count_blocked_threads();
+void scheduler_print_threads();
+
 #endif

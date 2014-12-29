@@ -7,7 +7,7 @@
 
 typedef long timer_id_t;
 
-typedef void (*timer_callback)(timer_id_t id);
+typedef void (*timer_callback)(timer_id_t id, void * data);
 
 //TODO change from linked list to heap
 
@@ -17,6 +17,7 @@ struct timer_at_time {
     struct timer_at_time * next;
     struct timer_at_time * prev;
     timer_callback callback;
+    void * data;
 };
 
 struct timer_at_offset {
@@ -25,6 +26,7 @@ struct timer_at_offset {
     struct timer_at_offset * next;
     struct timer_at_offset * prev;
     timer_callback callback;
+    void * data;
 };
 
 void timers_init(void);
@@ -39,9 +41,9 @@ void timer_at_offset_free(struct timer_at_offset * t);
 int timer_far_timers_cmp(struct timer_at_time * a, struct timer_at_time * b);
 int timer_near_timers_cmp(struct timer_at_offset * a, struct timer_at_offset * b);
 
-timer_id_t timer_schedule_at(struct timeval * time, timer_callback callback);
-timer_id_t timer_schedule_delay(suseconds_t useconds, timer_callback callback);
-struct timer_at_offset * timer_schedule_delay_with_id(timer_id_t id, suseconds_t usecs, timer_callback callback);
+timer_id_t timer_schedule_at(struct timeval * time, timer_callback callback, void * data);
+timer_id_t timer_schedule_delay(suseconds_t useconds, timer_callback callback, void * data);
+struct timer_at_offset * timer_schedule_delay_with_id(timer_id_t id, suseconds_t usecs, timer_callback callback, void * data);
 bool timer_cancel(timer_id_t id);
 int timer_thread(void * data) _Noreturn;
 

@@ -4,6 +4,8 @@
 #include <arch/registers.h>
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <sys/time.h>
+#include <sys/timer.h>
 
 #define STACK_SIZE 4096
 
@@ -44,6 +46,8 @@ struct thread {
     thread_func func;
     void * data;
 
+    timer_id_t timed_sleep_timer_id;
+
     enum thread_state state;
 
     int exit_code;
@@ -69,6 +73,9 @@ void current_thread_restore_regs(struct registers * regs);
 void thread_context_switch(struct thread *t);
 
 void current_thread_sleep(void);
+void current_thread_sleep_usecs(useconds_t usecs);
 void thread_wake(struct thread *t);
+
+void thread_wake_timer_callback(timer_id_t timer_id, void * data);
 
 #endif

@@ -50,7 +50,9 @@ struct context {
     struct stack_frame frame;
 };
 
-void push_flags_register(void);
-void pop_flags_register(void);
+#define push_flags_register() __asm__("pushfl")
+#define pop_flags_register() __asm__("popfl")
+
+void registers_dump(struct registers * regs);
 
 #endif

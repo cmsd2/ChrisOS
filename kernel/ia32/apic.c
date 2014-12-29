@@ -445,3 +445,23 @@ int ioapic_interrupt_for_irq(uint32_t irq) {
     ioapic_read_redirection_entry(i, irq - i->irq_base, &lower, &upper);
     return IOAPIC_RED_GET_INTERRUPT_VECTOR(lower);
 }
+
+void ioapic_mask_irq(uint32_t irq) {
+    struct ioapic * i = ioapic_for_irq(irq);
+    assert(i);
+    uint32_t lower, upper;
+    int index = irq - i->irq_base;
+    ioapic_read_redirection_entry(i, index, &lower, &upper);
+    lower = IOAPIC_RED_SET_MASK(lower, ioapic_redirect_masked);
+    ioapic_write_redirection_entry(i, index, lower, upper);
+}
+
+void ioapic_unmask_irq(uint32_t irq) {
+    struct ioapic * i = ioapic_for_irq(irq);
+    assert(i);
+    uint32_t lower, upper;
+    int index = irq - i->irq_base;
+    ioapic_read_redirection_entry(i, index, &lower, &upper);
+    lower = IOAPIC_RED_SET_MASK(lower, ioapic_redirect_unmasked);
+    ioapic_write_redirection_entry(i, index, lower, upper);
+}

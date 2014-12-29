@@ -11,6 +11,12 @@
 
 #define MAX_INTERRUPTS 256
 
+#define interrupts_disable() __asm__("cli")
+#define interrupts_enable() __asm__("sti")
+
+uint32_t interrupts_enter_cli();
+void interrupts_leave_cli(uint32_t flags);
+
 typedef bool (*interrupt_handler_fn)(uint32_t int_no, struct registers * regs, void * data);
 
 struct interrupt_handler {
@@ -21,8 +27,6 @@ struct interrupt_handler {
 };
 
 void interrupts_init(void);
-void interrupts_enable(void);
-void interrupts_disable(void);
 void interrupts_install_handlers(void);
 void interrupts_isr_handler(struct registers);
 struct interrupt_handler * interrupts_handler_alloc();

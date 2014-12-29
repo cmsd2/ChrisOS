@@ -5,6 +5,7 @@
 #include <mm/malloc.h>
 #include <arch/stack.h>
 #include <sys/scheduler.h>
+#include <utils/kprintf.h>
 
 struct thread *_free_threads;
 
@@ -138,6 +139,40 @@ void current_thread_sleep() {
     scheduler_yield();
 }
 
+void current_thread_sleep_usecs(useconds_t usecs) {
+    struct thread * t = current_thread();
+
+    t->timed_sleep_timer_id =
+        timer_schedule_delay(usecs, thread_wake_timer_callback, t);
+
+    kprintf("thread %s going to sleep for %dus. timer_id=%d\n", t->name, usecs, t->timed_sleep_timer_id);
+
+    current_thread_sleep();
+
+    //kprintf("thread %s woken up\n", t->name);
+
+    if(t->timed_sleep_timer_id) {
+        kprintf("thread %s cancelling timer id %d. didn't wake up naturally?\n", t->name, t->timed_sleep_timer_id);
+        timer_cancel(t->timed_sleep_timer_id);
+        t->timed_sleep_timer_id = 0;
+    }
+}
+
 void thread_wake(struct thread * t) {
     scheduler_make_runnable(t);
+}
+
+// timer callback for use with current_thread_sleep_usecs
+void thread_wake_timer_callback(timer_id_t timer_id __unused, void * data) {
+    struct thread * t = (struct thread *)data;
+
+    kprintf("thread %s got timer callback from timer %d (t->timed_sleep_timer_id=%d t->state=%d). waking up\n", t->name, timer_id, t->timed_sleep_timer_id, t->state);
+
+    t->timed_sleep_timer_id = 0;
+
+    scheduler_print_threads();
+
+    thread_wake(t);
+
+    scheduler_print_threads();
 }

@@ -2,6 +2,7 @@
 #include <mm/malloc.h>
 #include <utlist.h>
 #include <sys/scheduler.h>
+#include <arch/interrupts.h>
 #include <utils/kprintf.h>
 
 #define NEAR_THRESHOLD_SECS 10
@@ -61,27 +62,35 @@ int timer_near_timers_cmp(struct timer_at_offset * a, struct timer_at_offset * b
     return 0;
 }
 
-timer_id_t timer_schedule_at(struct timeval * time, timer_callback callback) {
+timer_id_t timer_schedule_at(struct timeval * time, timer_callback callback, void * data) {
+    uint32_t flags = interrupts_enter_cli();
+
+    timer_id_t result;
     assert(time);
     struct timer_at_time * timer = timer_at_time_alloc();
     if(timer) {
-        timer->id = timer_next_id();
+        result = timer->id = timer_next_id();
         timer->time = *time;
         timer->callback = callback;
+        timer->data = data;
         DL_PREPEND(_far_timers, timer);
         DL_SORT(_far_timers, timer_far_timers_cmp);
         return timer->id;
     } else {
-        return -1;
+        result = -1;
     }
+
+    interrupts_leave_cli(flags);
+    return result;
 }
 
-struct timer_at_offset * timer_schedule_delay_with_id(timer_id_t id, suseconds_t usecs, timer_callback callback) {
+struct timer_at_offset * timer_schedule_delay_with_id(timer_id_t id, suseconds_t usecs, timer_callback callback, void * data) {
     struct timer_at_offset * timer = timer_at_offset_alloc();
     if(timer) {
         timer->id = id;
         timer->delay = usecs;
         timer->callback = callback;
+        timer->data = data;
         DL_PREPEND(_near_timers, timer);
         DL_SORT(_near_timers, timer_near_timers_cmp);
         return timer;
@@ -90,36 +99,47 @@ struct timer_at_offset * timer_schedule_delay_with_id(timer_id_t id, suseconds_t
     }
 }
 
-timer_id_t timer_schedule_delay(suseconds_t useconds, timer_callback callback) {
+timer_id_t timer_schedule_delay(suseconds_t useconds, timer_callback callback, void * data) {
+    uint32_t flags = interrupts_enter_cli();
+
     timer_id_t id = timer_next_id();
 
-    struct timer_at_offset * timer = timer_schedule_delay_with_id(id, useconds, callback);
-    if(timer) {
-        return id;
-    } else {
-        return -1;
+    struct timer_at_offset * timer = timer_schedule_delay_with_id(id, useconds, callback, data);
+    if(!timer) {
+        id = -1;
     }
+
+    interrupts_leave_cli(flags);
+
+    return id;
 }
 
 bool timer_cancel(timer_id_t id) {
+    uint32_t flags = interrupts_enter_cli();
+
+    bool result = false;
     struct timer_at_offset *nt;
     struct timer_at_time *ft;
 
     DL_FOREACH(_near_timers, nt) {
         if(nt->id == id) {
             DL_DELETE(_near_timers, nt);
-            return true;
+            result = true;
+            goto _cancel_cleanup;
         }
     }
 
     DL_FOREACH(_far_timers, ft) {
         if(ft->id == id) {
             DL_DELETE(_far_timers, ft);
-            return true;
+            result = true;
+            goto _cancel_cleanup;
         }
     }
 
-    return false;
+ _cancel_cleanup:
+    interrupts_leave_cli(flags);
+    return result;
 }
 
 int timer_thread(void * data __unused) {
@@ -138,35 +158,51 @@ int timer_thread(void * data __unused) {
 // returns 0 if next timer is due now or since we last checked
 // returns number of microseconds until next timer due otherwise
 suseconds_t timers_next_delay() {
+    uint32_t flags = interrupts_enter_cli();
+
     struct timer_at_offset * timer = _near_timers;
+    suseconds_t result;
 
     if(timer) {
         if(timer->delay < 0) {
-            return 0;
+            result = 0;
         } else {
-            return timer->delay;
+            result = timer->delay;
         }
     } else {
-        return -1;
+        result = -1;
     }
+
+    interrupts_leave_cli(flags);
+
+    return result;
 }
 
 bool timers_handle_near_timers(void) {
+    uint32_t flags = interrupts_enter_cli(flags);
+
     struct timer_at_offset * timer = _near_timers;
+    bool result;
 
     if(timer && timer->delay <= 0) {
         if(timer->callback) {
-            timer->callback(timer->id);
+            timer->callback(timer->id, timer->data);
         }
         timer_cancel(timer->id);
 
-        return true;
+        result = true;
     } else {
-        return false;
+        result = false;
     }
+
+    interrupts_leave_cli(flags);
+
+    return result;
 }
 
 void timers_update_far_timers() {
+    uint32_t flags = interrupts_enter_cli();
+
     struct timeval now;
     get_time_utc(&now);
 
@@ -179,12 +215,16 @@ void timers_update_far_timers() {
         if(time_cmp(&ft->time, &near_threshold) <= 0) {
             timers_convert_far_to_near(ft);
         } else {
-            return;
+            break;
         }
     }
+
+    interrupts_leave_cli(flags);
 }
 
 void timers_convert_far_to_near(struct timer_at_time * ft) {
+    uint32_t flags = interrupts_enter_cli();
+
     struct timeval now;
     get_time_utc(&now);
 
@@ -194,17 +234,23 @@ void timers_convert_far_to_near(struct timer_at_time * ft) {
     struct timer_at_offset * nt;
 
     DL_DELETE(_far_timers, ft);
-    nt = timer_schedule_delay_with_id(ft->id, usecs, ft->callback);
+    nt = timer_schedule_delay_with_id(ft->id, usecs, ft->callback, ft->data);
+
+    interrupts_leave_cli(flags);
 }
 
 // runs in IRQ context
 void timers_advance_clock(useconds_t usecs) {
+    uint32_t flags = interrupts_enter_cli();
+
     struct timer_at_offset * nt;
     DL_FOREACH(_near_timers, nt) {
         nt->delay -= usecs;
     }
 
     timers_update_far_timers();
+
+    interrupts_enter_cli(flags);
 }
 
 // runs in IRQ context
