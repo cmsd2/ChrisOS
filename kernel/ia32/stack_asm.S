@@ -3,6 +3,14 @@
 // void stack_switch(struct context ** old, struct context * new)
 .globl stack_switch
 stack_switch:
+        //convert the function call to a far-call stack layout:
+        popl %eax // = ret eip
+        pushfl
+        pushl %cs
+        pushl %eax
+        // normal functions have args at 8(%ebp) and up
+        // far-call functions have args at 16(%ebp) and up.
+
         pushl %ebp
         movl %esp, %ebp
 
@@ -11,13 +19,13 @@ stack_switch:
         pushl %edi
 
 _old_context:
-        movl 8(%ebp), %eax
+        movl 16(%ebp), %eax
         test %eax, %eax
         jz _new_context
         movl %esp, (%eax)
 
 _new_context:
-        movl 12(%ebp), %eax
+        movl 20(%ebp), %eax
         movl %eax, %esp
 
         popl %edi
@@ -25,4 +33,5 @@ _new_context:
         popl %ebx
 
         popl %ebp
-        ret
+
+        iret

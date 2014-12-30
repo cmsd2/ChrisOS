@@ -29,13 +29,13 @@ void scheduler_yield() {
 
     struct thread * new_thread = scheduler_next_thread();
 
-    scheduler_unlock(flags);
-
     if(new_thread) {
         process_context_switch(new_thread);
     } else {
         //
     }
+
+    scheduler_unlock(flags);
 }
 
 struct thread * scheduler_next_thread() {

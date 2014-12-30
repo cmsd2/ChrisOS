@@ -1,6 +1,7 @@
 #include <sys/spinlock.h>
 #include <arch/interrupts.h>
 #include <sys/thread.h>
+#include <assert.h>
 
 void spinlock_init(struct spinlock * lock) {
     lock->locked = 0;
@@ -26,6 +27,8 @@ uint32_t spinlock_acquire(struct spinlock * lock) {
 }
 
 void spinlock_release(struct spinlock * lock, uint32_t flags) {
+    assert(false == flags_register_is_set(flags_if_bit));
+
     lock->locked--;
     lock->owner = 0;
 
