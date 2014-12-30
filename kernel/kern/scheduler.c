@@ -25,9 +25,13 @@ void scheduler_unlock(uint32_t flags) {
 // simple round-robin scheduler with no priorities
 // can be called from IRQ context
 void scheduler_yield() {
-    uint32_t flags = scheduler_lock();
+    uint32_t flags1 = interrupts_enter_cli();
+
+    uint32_t flags2 = scheduler_lock();
 
     struct thread * new_thread = scheduler_next_thread();
+
+    scheduler_unlock(flags2);
 
     if(new_thread) {
         process_context_switch(new_thread);
@@ -35,7 +39,7 @@ void scheduler_yield() {
         //
     }
 
-    scheduler_unlock(flags);
+    interrupts_leave_cli(flags1);
 }
 
 struct thread * scheduler_next_thread() {

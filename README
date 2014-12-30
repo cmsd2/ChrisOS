@@ -101,6 +101,8 @@ framebuffer
 asynchronous programming using timers and tasks
 audit everything so far for races and concurrency bugs/flaws
   now that we're messing with interrupts and interleaved execution
+  there's something that doesn't smell quite right about scheduler_yield 
+  and its locking across context switches.
 
 Later:
 interactive console
