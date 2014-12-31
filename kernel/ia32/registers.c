@@ -55,3 +55,61 @@ void registers_dump(struct registers * regs) {
     kprintf("esp = 0x%x\n", regs->useresp);
     kprintf("ss  = 0x%x\n", regs->ss);
 }
+
+cr_reg_t get_cr0_register(void) {
+    cr_reg_t result;
+    __asm__("movl %%cr0, %0" : "=r"(result));
+    return result;
+}
+
+void set_cr0_register(cr_reg_t cr0) {
+    __asm__("movl %0, %%cr0" : : "r"(cr0));
+}
+
+cr_reg_t cr0_register_value_clear_bit(cr_reg_t value, enum cr0_register_bit_sel bit_sel) {
+    clrbit(&value, bit_sel);
+    return value;
+}
+
+cr_reg_t cr0_register_value_set_bit(cr_reg_t value, enum cr0_register_bit_sel bit_sel) {
+    setbit(&value, bit_sel);
+    return value;
+}
+
+bool cr0_register_value_is_set(cr_reg_t value, enum cr0_register_bit_sel bit_sel) {
+    return 1 == isset(&value, bit_sel);
+}
+
+bool cr0_register_is_set(enum cr0_register_bit_sel bit_sel) {
+    cr_reg_t cr0 = get_cr0_register();
+    return cr0_register_value_is_set(cr0, bit_sel);
+}
+
+cr_reg_t get_cr4_register(void) {
+    cr_reg_t result;
+    __asm__("movl %%cr4, %0" : "=r"(result));
+    return result;
+}
+
+void set_cr4_register(cr_reg_t cr0) {
+    __asm__("movl %0, %%cr4" : : "r"(cr0));
+}
+
+cr_reg_t cr4_register_value_clear_bit(cr_reg_t value, enum cr4_register_bit_sel bit_sel) {
+    clrbit(&value, bit_sel);
+    return value;
+}
+
+cr_reg_t cr4_register_value_set_bit(cr_reg_t value, enum cr4_register_bit_sel bit_sel) {
+    setbit(&value, bit_sel);
+    return value;
+}
+
+bool cr4_register_value_is_set(cr_reg_t value, enum cr4_register_bit_sel bit_sel) {
+    return 1 == isset(&value, bit_sel);
+}
+
+bool cr4_register_is_set(enum cr4_register_bit_sel bit_sel) {
+    cr_reg_t cr4 = get_cr4_register();
+    return cr4_register_value_is_set(cr4, bit_sel);
+}

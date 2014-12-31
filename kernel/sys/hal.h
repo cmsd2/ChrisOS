@@ -29,6 +29,8 @@ hal_install_irq_handler(uint32_t irq,
                         hal_irq_handler_thread_function slow_handler,
                         const char * name,
                         void * data);
+void hal_mask_irq(uint32_t irq);
+void hal_unmask_irq(uint32_t irq);
 
 bool hal_uninstall_irq_handler(hal_irq_handler_handle handle);
 

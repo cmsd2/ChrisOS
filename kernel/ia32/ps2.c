@@ -12,6 +12,8 @@ bool _ps2_available = false;
 
 static struct ps2_async_command * _ps2_free_commands;
 static struct ps2_async_command * _ps2_kbd_command_queue;
+static uint32_t _kbd_irq = 1;
+static struct thread * _ps2_kbd_thread;
 
 //TODO this is horrible
 void ps2_init() {
@@ -82,7 +84,7 @@ void ps2_init() {
     }
 
     kprintf("installing ps2 keyboard irq handler\n");
-    hal_install_irq_handler(1, ps2_kbd_interrupt_handler, ps2_kbd_thread, "ps2_kbd", NULL);
+    hal_install_irq_handler(_kbd_irq, ps2_kbd_interrupt_handler, ps2_kbd_thread, "ps2_kbd", NULL);
 }
 
 bool ps2_probe() {
@@ -117,11 +119,9 @@ bool ps2_probe() {
 }
 
 void ps2_wait_output_buffer_sync() {
-    uint8_t status;
-    status = ps2_read_status();
     kprintf("spinwaiting on ps2 output buffer...\n");
-    while(!PS2_STATUS_GET_OUTPUT_BUFFER_STATUS(status)) {
-        status = ps2_read_status();
+    while(!ps2_can_read_data()) {
+        // nothing
     }
 }
 
@@ -132,6 +132,11 @@ void ps2_wait_input_buffer_sync() {
     while(!PS2_STATUS_GET_INPUT_BUFFER_STATUS(status)) {
         status = ps2_read_status();
     }
+}
+
+bool ps2_can_read_data() {
+    uint8_t status = ps2_read_status();
+    return 1 == PS2_STATUS_GET_OUTPUT_BUFFER_STATUS(status);
 }
 
 uint8_t ps2_read_data() {
@@ -151,11 +156,8 @@ void ps2_write_command(uint8_t command) {
 }
 
 void ps2_flush_output_buffer(void) {
-    ps2_status_reg_t status;
-    status = ps2_read_status();
-    while(PS2_STATUS_GET_OUTPUT_BUFFER_STATUS(status)) {
+    while(ps2_can_read_data()) {
         ps2_read_data();
-        status = ps2_read_status();
     }
 }
 
@@ -210,39 +212,100 @@ ps2_kbd_interrupt_handler(uint32_t int_no,
                           struct registers * regs,
                           void * __unused data) {
 
-    uint8_t kbd_data = ps2_read_data();
-    kprintf("received keyboard data 0x%hhx\n", kbd_data);
+    kprintf("ps2_kbd received interrupt\n");
     return IRQ_DEFER;
 }
 
 int ps2_kbd_thread(void * data __unused) {
+    _ps2_kbd_thread = current_thread();
+    size_t scancode_i = 0;
+    uint8_t scancode[MAX_SCANCODE_BYTES];
+    bool done;
 
-    while(1) {
-        kprintf("ps2_kbd_thread woken up\n");
-        current_thread_sleep_usecs(1000000);
-        current_thread_sleep_usecs(1000000);
-        kprintf("ps2_kbd_thread going to sleep\n");
-        current_thread_sleep();
-    }
+    ps2_flush_output_buffer();
 
-    enum ps2_driver_state state;
+    enum ps2_driver_state state = waiting_scancode_start;
     while(1) {
-        switch(state) {
-        case waiting_command:
-            if(_ps2_kbd_command_queue) {
-                ps2_kbd_issue_next_command();
-                state = waiting_response;
+        hal_mask_irq(_kbd_irq);
+
+        done = true;
+        do {
+            switch(state) {
+            case waiting_command:
+                if(_ps2_kbd_command_queue) {
+                    ps2_kbd_issue_next_command();
+                    state = waiting_response;
+                }
+                break;
+            case waiting_response:
+                if(ps2_kbd_handle_response()) {
+                    state = waiting_command;
+                    continue;
+                }
+                break;
+            case waiting_scancode_start:
+                scancode[0] = ps2_read_data();
+                kprintf("received keyboard data 0x%hhx\n", scancode[0]);
+                scancode_i = 1;
+                if(ps2_kbd_handle_scancode(scancode, scancode_i)) {
+                    ps2_kbd_print_scancode(scancode, scancode_i);
+                } else {
+                    state = waiting_scancode_end;
+                }
+                done = !ps2_can_read_data();
+                break;
+            case waiting_scancode_end:
+                scancode[scancode_i] = ps2_read_data();
+                kprintf("received keyboard data 0x%hhx\n", scancode[scancode_i]);
+                scancode_i++;
+                if(ps2_kbd_handle_scancode(scancode, scancode_i)) {
+                    ps2_kbd_print_scancode(scancode, scancode_i);
+                    state = waiting_scancode_start;
+                }
+                done = !ps2_can_read_data();
+                break;
             }
-            break;
-        case waiting_response:
-            if(ps2_kbd_handle_response()) {
-                state = waiting_command;
-                continue;
-            }
-            break;
-        }
+        } while(!done);
+
+        scheduler_make_blocked(current_thread());
+        kprintf("unmasking kbd irq\n");
+        hal_unmask_irq(_kbd_irq);
+        // if kbd irq arrives here, we're ok,
+        // we just immediately get made runnable and rescheduled
         scheduler_yield();
     }
+}
+
+void ps2_kbd_print_scancode(uint8_t * scancode, size_t length) {
+    kprintf("scancode: ");
+    for(int i = 0; i < length; i++)
+        kprintf(" 0x%hhx", scancode[i]);
+    kprintf("\n");
+}
+
+bool ps2_kbd_handle_scancode(uint8_t * scancode, size_t length) {
+    bool result = true;
+    switch(length) {
+    case 1:
+        if(scancode[0] == 0xE0 || scancode[0] == 0xF0 || scancode[0] == 0xE1) {
+            result = false;
+        }
+        break;
+    case 2:
+        if(scancode[0] == 0xE0 && scancode[1] == 0xF0 || scancode[0] == 0xE1) {
+            result = false;
+        }
+        break;
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+        if(scancode[0] == 0xE1) {
+            result = false;
+        }
+    }
+    return result;
 }
 
 void ps2_kbd_issue_next_command() {

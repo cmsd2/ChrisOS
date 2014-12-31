@@ -55,7 +55,7 @@ bool allocator_mem_alloc(struct allocator_map * map, size_t size, size_t alignme
             // stop on first one large enough
             aligned_start = align_address(region->address, alignment);
             remaining_size = region->size - (aligned_start - region->address);
-    
+
             if(remaining_size >= size) {
                 hole->address = aligned_start;
                 hole->size = size;
@@ -87,7 +87,7 @@ void allocator_print_map_info(struct allocator_map * map) {
         r_num++;
     }
     if(available) {
-        fragmentation = 100 * (1 - (float)largest_block / available);
+        fragmentation = 100 - (100 * largest_block) / available;
     }
     kprintf("allocator: available=%lx largest_block=%lx fragmentation=%d%%\n", available, largest_block, fragmentation);
 }
@@ -118,4 +118,3 @@ void allocator_region_post_merge(struct allocator_region * a, struct allocator_r
 void allocator_region_post_split(struct allocator_region * a, struct allocator_region * b) {
     // do nothing
 }
-

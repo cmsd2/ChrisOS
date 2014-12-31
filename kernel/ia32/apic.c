@@ -308,10 +308,13 @@ void apic_configure_ioapic(uint8_t id, uint32_t phys_address, uint32_t global_ir
 
 void ioapic_print_redirection_table(struct ioapic * i) {
     uint32_t lower, upper;
+    kprintf("I/O APIC Id=%hhd %d irqs\n", i->id, i->irq_count);
     for(int j = 0; j < i->irq_count; j++) {
         ioapic_read_redirection_entry(i, j, &lower, &upper);
-        kprintf("I/O APIC Id=%hhd IRQ=%d lower=0x%x upper=0x%x\n",
+        if(IOAPIC_RED_GET_INTERRUPT_VECTOR(lower) != 0) {
+            kprintf("I/O APIC Id=%hhd IRQ=%d lower=0x%x upper=0x%x\n",
                 i->id, j, lower, upper);
+        }
     }
 }
 

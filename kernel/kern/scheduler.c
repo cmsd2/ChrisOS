@@ -81,8 +81,6 @@ struct thread * scheduler_next_thread() {
 void scheduler_make_runnable(struct thread * t) {
     uint32_t flags = scheduler_lock();
 
-    assert(t->state != thread_running);
-
     if(t->state != thread_runnable) {
         scheduler_remove_thread(t);
 

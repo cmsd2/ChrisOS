@@ -33,10 +33,8 @@ void hal_x86_init_irq_lines() {
 }
 
 //TODO: uses ioapic's global system irqs, which so far ignores interrupt override in madt table
-void hal_x86_unmask_irq(uint32_t irq) {
+void hal_unmask_irq(uint32_t irq) {
     struct hal_irq_line * irq_line = &_hal_irqs[irq];
-
-    hal_x86_install_upstream_irq_handler(irq);
 
     uint8_t lapic_id = apic_current_cpu_apic_id();
 
@@ -50,7 +48,7 @@ void hal_x86_unmask_irq(uint32_t irq) {
 }
 
 //TODO: uses ioapic's global system irqs, which so far ignores interrupt override in madt table
-void hal_x86_mask_irq(uint32_t irq) {
+void hal_mask_irq(uint32_t irq) {
     struct hal_irq_line * irq_line = &_hal_irqs[irq];
 
     uint8_t lapic_id = apic_current_cpu_apic_id();
@@ -107,7 +105,7 @@ hal_install_irq_handler(uint32_t irq,
         hal_x86_start_slow_handler_thread(handler);
     }
 
-    hal_x86_unmask_irq(irq);
+    hal_x86_install_upstream_irq_handler(irq);
 }
 
 bool hal_uninstall_irq_handler(hal_irq_handler_handle handle) {

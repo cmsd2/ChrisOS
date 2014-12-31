@@ -18,6 +18,6 @@ ticks_irq_handler(uint32_t int_no, struct registers * regs, void * data);
 useconds_t ticks_usecs_since_tick(void);
 ticks_counter_t ticks_since_boot(void);
 useconds_t ticks_quantum_usecs(void);
-double ticks_frequency(void);
+uint32_t ticks_frequency(void);
 
 #endif

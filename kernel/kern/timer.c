@@ -16,9 +16,9 @@ static struct thread * _timer_thread;
 static struct spinlock _timer_lock;
 
 void timers_init() {
+    spinlock_init(&_timer_lock);
     _timer_thread = thread_spawn_kthread(timer_thread, "timer", NULL);
     assert(_timer_thread);
-    spinlock_init(&_timer_lock);
 }
 
 uint32_t timers_lock() {
@@ -175,6 +175,7 @@ suseconds_t timers_next_delay() {
     suseconds_t result;
 
     if(timer) {
+        //kprintf("timer delay = %d\n", timer->delay);
         if(timer->delay < 0) {
             result = 0;
         } else {
@@ -254,6 +255,7 @@ void timers_convert_far_to_near(struct timer_at_time * ft) {
 void timers_advance_clock(useconds_t usecs) {
     uint32_t flags = timers_lock();
 
+    //kprintf("advancing clock by %u usecs\n", usecs);
     struct timer_at_offset * nt;
     DL_FOREACH(_near_timers, nt) {
         nt->delay -= usecs;

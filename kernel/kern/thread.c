@@ -80,6 +80,7 @@ int thread_init(struct thread * t, thread_func f, void * data) {
 }
 
 struct thread * thread_spawn_kthread(thread_func f, const char * name, void * data) {
+    kprintf("spawning kthread %s\n", name);
     struct thread * t = thread_alloc();
     if(t) {
         if(0 != thread_init(t, f, data)) {

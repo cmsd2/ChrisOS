@@ -10,6 +10,8 @@
 #define PS2_DATA_PORT 0x60
 #define PS2_SC_PORT 0x64
 
+#define MAX_SCANCODE_BYTES 8
+
 typedef uint8_t ps2_status_reg_t;
 #define PS2_STATUS_GET_OUTPUT_BUFFER_STATUS(ps2) getbit(ps2, 0)
 #define PS2_STATUS_GET_INPUT_BUFFER_STATUS(ps2) getbit(ps2, 1)
@@ -95,6 +97,7 @@ void ps2_init(void);
 bool ps2_probe(void);
 void ps2_wait_output_buffer_sync(void);
 uint8_t ps2_read_data(void);
+bool ps2_can_read_data(void);
 uint8_t ps2_read_status(void);
 void ps2_write_data(uint8_t data);
 void ps2_write_command(uint8_t command);
@@ -110,10 +113,14 @@ ps2_kbd_interrupt_handler(uint32_t int_no, struct registers * regs, void * data)
 int ps2_kbd_thread(void * data);
 void ps2_kbd_issue_next_command(void);
 bool ps2_kbd_handle_response(void);
+bool ps2_kbd_handle_scancode(uint8_t * scancode, size_t length);
+void ps2_kbd_print_scancode(uint8_t * scancode, size_t length);
 
 enum ps2_driver_state {
     waiting_command,
-    waiting_response
+    waiting_response,
+    waiting_scancode_start,
+    waiting_scancode_end
 };
 
 #endif

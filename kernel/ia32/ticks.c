@@ -15,7 +15,7 @@ one interrupt every 0.01s for scheduling
 get actual time by reading back current counter value as needed
  */
 static ticks_counter_t _ticks_since_boot;
-static double _tick_freq;
+static uint32_t _tick_freq;
 static useconds_t _tick_quantum_usecs;
 
 void ticks_init() {
@@ -23,10 +23,14 @@ void ticks_init() {
 
     unsigned int pit_freq = PIT_FREQUENCY; // Hz
     unsigned int counter = pit_freq / HZ;
-    _tick_freq = (double)pit_freq / counter;
+    _tick_freq = pit_freq / counter;
     _tick_quantum_usecs = (unsigned int)(1000000 / _tick_freq);
+    kprintf("ticks HZ=%d _tick_freq=%d pit_freq=%d counter=%d _tick_quantum_usecs=%d\n", HZ, _tick_freq, pit_freq, counter, _tick_quantum_usecs);
+    assert(_tick_quantum_usecs > 0);
 
     pit_square_wave(pit_channel_0, counter);
+
+    hal_unmask_irq(2);
 }
 
 enum hal_fast_irq_handler_result
@@ -63,6 +67,6 @@ useconds_t ticks_quantum_usecs() {
     return _tick_quantum_usecs;
 }
 
-double ticks_frequency() {
+uint32_t ticks_frequency() {
     return _tick_freq;
 }

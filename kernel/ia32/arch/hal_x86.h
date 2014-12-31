@@ -26,8 +26,8 @@ struct hal_irq_line {
 
 void hal_x86_init_irq_lines(void);
 
-void hal_x86_unmask_irq(uint32_t irq);
-void hal_x86_mask_irq(uint32_t irq);
+void hal_unmask_irq(uint32_t irq);
+void hal_mask_irq(uint32_t irq);
 
 struct hal_irq_handler * hal_x86_irq_handler_alloc();
 void hal_x86_irq_handler_free(struct hal_irq_handler * handler);
