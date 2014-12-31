@@ -24,6 +24,11 @@ void scheduler_unlock(uint32_t flags) {
 
 // simple round-robin scheduler with no priorities
 // can be called from IRQ context
+// note there are 2 ways to leave this function:
+// one in a straight line, as coded.
+// the other is inside process_context_switch which
+// will end up executing stack_switch and then
+// thread_entry_point.
 void scheduler_yield() {
     uint32_t flags1 = interrupts_enter_cli();
 

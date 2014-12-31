@@ -25,7 +25,7 @@ struct context * stack_init(uintptr_t stack, size_t size,
     ctx->frame.ebp = 0;
     ctx->frame.eip = (uint32_t)func;
     ctx->frame.cs = (uint32_t)get_cs_register();
-    ctx->frame.eflags = flags_register_value_set_bit(get_flags_register(), flags_if_bit);
+    ctx->frame.eflags = flags_register_value_clear_bit(get_flags_register(), flags_if_bit);
 
     return ctx;
 }

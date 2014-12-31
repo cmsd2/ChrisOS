@@ -6,6 +6,7 @@
 #include <arch/stack.h>
 #include <sys/scheduler.h>
 #include <utils/kprintf.h>
+#include <arch/interrupts.h>
 
 struct thread *_free_threads;
 
@@ -45,10 +46,16 @@ void thread_free(struct thread *t) {
 void thread_system_init(void) {
 }
 
+// only place this is called is as a result of
+// stack_switch inside scheduler_yield.
+// interrupts disabled across context switch.
 void thread_entry_point(void * data) {
     if(_current_thread != data) {
         panic("thread is not current thread");
     }
+
+    assert(false == flags_register_is_set(flags_if_bit));
+    interrupts_enable();
 
     int result = _current_thread->func(_current_thread->data);
 
