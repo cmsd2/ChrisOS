@@ -65,13 +65,19 @@ void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
     terminal_buffer[index] = make_vgaentry(c, color);
 }
 
+// clear row y starting in column x
+void terminal_clear_line_end(size_t x, size_t y) {
+    while(x < VGA_WIDTH) {
+        terminal_putentryat(' ', terminal_color, x, y);
+        x++;
+    }
+}
+
 void terminal_putchar(char c)
 {
     if(c == '\n') {
-        while(terminal_column < VGA_WIDTH) {
-            terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
-            terminal_column++;
-        }
+        terminal_clear_line_end(terminal_column, terminal_row);
+        terminal_column = VGA_WIDTH;
     } else if(c == 0x08) {
         /* backspace */
         if(terminal_column > 0) {
@@ -89,6 +95,7 @@ void terminal_putchar(char c)
         if (terminal_row == VGA_HEIGHT) {
             terminal_row = 0;
         }
+        terminal_clear_line_end(0, terminal_row);
     }
 
     if(serial_console_port) {

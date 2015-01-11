@@ -33,15 +33,12 @@
 #include <sys/timer.h>
 #include <drivers/tty.h>
 
-void say_hello(timer_id_t id, void * data __unused) {
-    kprintf("hello from timer %d\n", id);
-}
-
 int kapp(void * data) {
     char line[81];
     int len;
     kprintf("started kapp\n");
     while(1) {
+        kprintf("> ");
         len = tty_gets(line, 80);
         if(len >= 0) {
             if(len == 80) {
@@ -153,10 +150,6 @@ void kmain()
     thread_spawn_kthread(kapp, "kapp", NULL);
 
     acpi_madt_print_subtables();
-
-    for(int i = 1; i <= 2; i++) {
-        timer_schedule_delay(i * 1000000, say_hello, NULL);
-    }
 
     tty_init();
     timers_init();

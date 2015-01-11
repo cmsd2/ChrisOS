@@ -83,5 +83,6 @@ int tty_wait_chars_available();
 int tty_notify_chars_available();
 struct tty_observer * tty_observer_new(struct thread * t);
 void tty_observer_delete(struct tty_observer * o);
+void tty_compact_buffer(void);
 
 #endif

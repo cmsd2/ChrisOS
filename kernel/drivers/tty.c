@@ -87,8 +87,17 @@ int tty_send_key_event(struct tty_key_event * event) {
     }
 }
 
+void tty_compact_buffer() {
+    struct tty_line * line = _tty.lines;
+    memmove(line->data, line->data + line->read_pos, line->length);
+    line->length -= line->read_pos;
+    line->write_pos -= line->read_pos;
+    line->read_pos = 0;
+}
+
 int tty_line_newline() {
     if(0 == tty_line_append_char('\n')) {
+        tty_compact_buffer();
         tty_notify_chars_available();
         return 0;
     } else {
