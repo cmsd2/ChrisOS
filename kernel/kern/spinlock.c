@@ -2,26 +2,23 @@
 #include <arch/interrupts.h>
 #include <sys/thread.h>
 #include <assert.h>
+#include <utils/mem.h>
 
 void spinlock_init(struct spinlock * lock) {
-    lock->locked = 0;
+    memset(lock, 0, sizeof(struct spinlock));
 }
 
 // nestable spinlocks. interrupts disabled while held
 uint32_t spinlock_acquire(struct spinlock * lock) {
     uint32_t flags = interrupts_enter_cli();
-    volatile uint32_t * locked = &lock->locked;
     tid_t me = current_thread_id();
+    assert(me);
 
-    //TODO: is this right?
-    if(lock->owner != me) {
-        while(*locked) {
-            // spin
-        }
+    while(__sync_lock_test_and_set(&lock->owner, me) != me) {
+        // spin
     }
 
-    lock->locked++;
-    lock->owner = me;
+    lock->nested++;
 
     return flags;
 }
@@ -29,8 +26,11 @@ uint32_t spinlock_acquire(struct spinlock * lock) {
 void spinlock_release(struct spinlock * lock, uint32_t flags) {
     assert(false == flags_register_is_set(flags_if_bit));
 
-    lock->locked--;
-    lock->owner = 0;
+    lock->nested--;
+
+    if(lock->nested == 0) {
+        __sync_lock_release(&lock->owner);
+    }
 
     interrupts_leave_cli(flags);
 }

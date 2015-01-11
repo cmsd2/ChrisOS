@@ -44,6 +44,15 @@ void thread_free(struct thread *t) {
 }
 
 void thread_system_init(void) {
+    // use malloc here. malloc uses current_thread(). bit of a chicken and egg :(
+    struct thread new_thread;
+    new_thread.state = thread_running;
+    new_thread.tid = thread_next_id();
+    new_thread.name = "kbootstrap";
+    _current_thread = &new_thread;
+
+    _current_thread = thread_alloc();
+    *_current_thread = new_thread;
 }
 
 // only place this is called is as a result of
@@ -63,6 +72,7 @@ void thread_entry_point(void * data) {
 }
 
 int thread_init(struct thread * t, thread_func f, void * data) {
+    t->tid = thread_next_id();
     t->state = thread_created;
     t->stack = (uintptr_t)malloc(STACK_SIZE);
 

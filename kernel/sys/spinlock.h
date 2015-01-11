@@ -5,8 +5,8 @@
 #include <stdint.h>
 
 struct spinlock {
-    uint32_t locked;
-    tid_t owner;
+    tid_t owner; // 0 for not locked
+    uint32_t nested;
 };
 
 void spinlock_init(struct spinlock * lock);

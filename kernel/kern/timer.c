@@ -212,9 +212,8 @@ bool timers_handle_near_timers(void) {
     return result;
 }
 
+// timers lock must be held
 void timers_update_far_timers() {
-    uint32_t flags = timers_lock();
-
     struct timeval now;
     get_time_utc(&now);
 
@@ -230,13 +229,10 @@ void timers_update_far_timers() {
             break;
         }
     }
-
-    timers_unlock(flags);
 }
 
+// timers lock must be held
 void timers_convert_far_to_near(struct timer_at_time * ft) {
-    uint32_t flags = timers_lock();
-
     struct timeval now;
     get_time_utc(&now);
 
@@ -247,8 +243,6 @@ void timers_convert_far_to_near(struct timer_at_time * ft) {
 
     DL_DELETE(_far_timers, ft);
     nt = timer_schedule_delay_with_id(ft->id, usecs, ft->callback, ft->data);
-
-    timers_unlock(flags);
 }
 
 // runs in IRQ context

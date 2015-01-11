@@ -91,6 +91,8 @@ void kmain()
 
     kmalloc_init();
 
+    thread_system_init();
+
     size_t size = 4096 * 100;
     void * mem = malloc(size);
     kprintf("Alloc'd at addr=0x%lx\n", mem);
@@ -155,8 +157,6 @@ void kmain()
     timers_init();
     ticks_init();
 
-    // won't get here because scheduler will be called at end of ticks interrupt handler
-    //TODO: move main code into kthread?
-    kprintf("yielding\n");
-    scheduler_yield();
+    kprintf("boostrap finished.\n");
+    thread_exit(current_thread(), 0);
 }
