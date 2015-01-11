@@ -7,13 +7,92 @@
 #include <arch/apic.h>
 #include <arch/interrupts.h>
 #include <sys/hal.h>
+#include <drivers/tty.h>
 
 bool _ps2_available = false;
+
+// just the visible characters for scancodes 0 to 127:
+#define MAX_VISIBLE_SCANCODE 127
+char _ps2_kbd_scancodes_set_2_en_gb[] = {
+  '`',    0,    0,    0,
+    0,    0,    0,    0,
+    0,    0,    0,    0,
+    0,'\t',  '\\',    0,
+    0,    0,    0,    0,
+    0,  'q',  '1',    0,
+    0,    0,  'z',  's',
+  'a',  'w',  '2',    0,
+    0,  'c',  'x',  'd',
+  'e',  '4',  '3',    0,
+    0,  ' ',  'v',  'f',
+  't',  'r',  '5',    0,
+    0,  'n',  'b',  'h',
+  'g',  'y',  '6',    0,
+    0,    0,  'm',  'j',
+  'u',  '7',  '8',    0,
+    0,  ',',  'k',  'i',
+  'o',  '0',  '9',    0,
+    0,  '.',  '/',  'l',
+  ';',  'p',  '-',    0,
+    0,    0,  '\'',    0,
+  '[',  '=',    0,    0,
+    0,    0, '\n',  ']',
+    0,  '#',    0,    0,
+    0,    0,'\x8',    0,
+    0,  '1', 0x08,  '4',
+  '7',    0,    0,    0,
+  '0',  '.',  '2',  '5',
+  '6',  '8', '\e',    0,
+    0,  '+',  '3',  '-',
+  '*',  '9',    0,    0,
+    0,    0,    0,    0
+};
+
+char _ps2_kbd_scancodes_set_2_en_gb_shift[] = {
+  '`',    0,    0,    0,
+    0,    0,    0,    0,
+    0,    0,    0,    0,
+    0, '\t',  '|',    0,
+    0,    0,    0,    0,
+    0,  'Q',  '!',    0,
+    0,    0,  'Z',  'S',
+  'A',  'W',  '"',    0,
+    0,  'C',  'X',  'D',
+  'E',  '$',  '#',    0,
+    0,  ' ',  'V',  'F',
+  'T',  'R',  '%',    0,
+    0,  'N',  'B',  'H',
+  'G',  'Y',  '^',    0,
+    0,    0,  'M',  'J',
+  'U',  '&',  '*',    0,
+    0,  '<',  'K',  'I',
+  'O',  ')',  '(',    0,
+    0,  '>',  '?',  'L',
+  ':',  'P',  '_',    0,
+    0,    0, '@',    0,
+  '{',  '+',    0,    0,
+    0,    0, '\n',  '}',
+    0,  '~',    0,    0,
+    0,    0,'\x8',    0,
+    0,  '1',    0,  '4',
+  '7',    0,    0,    0,
+  '0',  '.',  '2',  '5',
+  '6',  '8', '\e',    0,
+    0,  '+',  '3',  '-',
+  '*',  '9',    0,    0,
+    0,    0,    0,    0
+};
+
+#define PS2_SC_ALT 0x11
+#define PS2_SC_LEFT_SHIFT 0x12
+#define PS2_SC_CTRL 0x14
+#define PS2_SC_RIGHT_SHIFT 0x59
 
 static struct ps2_async_command * _ps2_free_commands;
 static struct ps2_async_command * _ps2_kbd_command_queue;
 static uint32_t _kbd_irq = 1;
 static struct thread * _ps2_kbd_thread;
+static int _ps2_kbd_mod_state;
 
 //TODO this is horrible
 void ps2_init() {
@@ -212,7 +291,7 @@ ps2_kbd_interrupt_handler(uint32_t int_no,
                           struct registers * regs,
                           void * __unused data) {
 
-    kprintf("ps2_kbd received interrupt\n");
+    //kprintf("ps2_kbd received interrupt\n");
     return IRQ_DEFER;
 }
 
@@ -245,10 +324,10 @@ int ps2_kbd_thread(void * data __unused) {
                 break;
             case waiting_scancode_start:
                 scancode[0] = ps2_read_data();
-                kprintf("received keyboard data 0x%hhx\n", scancode[0]);
+                //kprintf("received keyboard data 0x%hhx\n", scancode[0]);
                 scancode_i = 1;
-                if(ps2_kbd_handle_scancode(scancode, scancode_i)) {
-                    ps2_kbd_print_scancode(scancode, scancode_i);
+                if(ps2_kbd_scancode_complete(scancode, scancode_i)) {
+                    ps2_kbd_handle_scancode(scancode, scancode_i);
                 } else {
                     state = waiting_scancode_end;
                 }
@@ -256,10 +335,10 @@ int ps2_kbd_thread(void * data __unused) {
                 break;
             case waiting_scancode_end:
                 scancode[scancode_i] = ps2_read_data();
-                kprintf("received keyboard data 0x%hhx\n", scancode[scancode_i]);
+                //kprintf("received keyboard data 0x%hhx\n", scancode[scancode_i]);
                 scancode_i++;
-                if(ps2_kbd_handle_scancode(scancode, scancode_i)) {
-                    ps2_kbd_print_scancode(scancode, scancode_i);
+                if(ps2_kbd_scancode_complete(scancode, scancode_i)) {
+                    ps2_kbd_handle_scancode(scancode, scancode_i);
                     state = waiting_scancode_start;
                 }
                 done = !ps2_can_read_data();
@@ -268,7 +347,7 @@ int ps2_kbd_thread(void * data __unused) {
         } while(!done);
 
         scheduler_make_blocked(current_thread());
-        kprintf("unmasking kbd irq\n");
+        //kprintf("unmasking kbd irq\n");
         hal_unmask_irq(_kbd_irq);
         // if kbd irq arrives here, we're ok,
         // we just immediately get made runnable and rescheduled
@@ -280,10 +359,102 @@ void ps2_kbd_print_scancode(uint8_t * scancode, size_t length) {
     kprintf("scancode: ");
     for(int i = 0; i < length; i++)
         kprintf(" 0x%hhx", scancode[i]);
-    kprintf("\n");
+    if(length && scancode[0] <= MAX_VISIBLE_SCANCODE) {
+        kprintf(" key: %c\n", _ps2_kbd_scancodes_set_2_en_gb[scancode[0]]);
+    } else {
+        kprintf("\n");
+    }
 }
 
 bool ps2_kbd_handle_scancode(uint8_t * scancode, size_t length) {
+    assert(length != 0);
+    int pressed = 1;
+    int key = scancode[0];
+    char charset_key = 0;
+    bool e0 = false;
+    struct tty_key_event key_event;
+    if(scancode[0] == 0xf0) {
+        pressed = 0;
+        key = scancode[1];
+    } else if(scancode[0] == 0xe0) {
+        e0 = true;
+        if(scancode[1] == 0xf0) {
+            pressed = 0;
+            key = scancode[2];
+        } else {
+            key = scancode[1];
+        }
+    }
+    switch(key) {
+    case PS2_SC_ALT:
+        if(e0) {
+            _ps2_kbd_mod_state = withbit(_ps2_kbd_mod_state, ps2_kbd_right_alt, pressed);
+        } else {
+            _ps2_kbd_mod_state = withbit(_ps2_kbd_mod_state, ps2_kbd_left_alt, pressed);
+        }
+        break;
+    case PS2_SC_CTRL:
+        if(e0) {
+            _ps2_kbd_mod_state = withbit(_ps2_kbd_mod_state, ps2_kbd_right_ctrl, pressed);
+        } else {
+            _ps2_kbd_mod_state = withbit(_ps2_kbd_mod_state, ps2_kbd_left_ctrl, pressed);
+        }
+        break;
+    case PS2_SC_LEFT_SHIFT:
+        _ps2_kbd_mod_state = withbit(_ps2_kbd_mod_state, ps2_kbd_left_shift, pressed);
+        break;
+    case PS2_SC_RIGHT_SHIFT:
+        _ps2_kbd_mod_state = withbit(_ps2_kbd_mod_state, ps2_kbd_right_shift, pressed);
+        break;
+    default:
+        charset_key = _ps2_kbd_scancodes_set_2_en_gb[key];
+        key_event.mod_keys = 0;
+        if(ps2_kbd_mod_ctrl_pressed() || ps2_kbd_mod_alt_pressed()) {
+            if(ps2_kbd_mod_ctrl_pressed()) {
+                key_event.mod_keys |= tty_mod_ctrl;
+            }
+            if(ps2_kbd_mod_alt_pressed()) {
+                key_event.mod_keys |= tty_mod_alt;
+            }
+            if(ps2_kbd_mod_shift_pressed()) {
+                key_event.mod_keys |= tty_mod_shift;
+            }
+        } else if(ps2_kbd_mod_shift_pressed()) {
+            charset_key = _ps2_kbd_scancodes_set_2_en_gb_shift[key];
+        }
+        if(charset_key) {
+            key_event.event_type = pressed == 1 ? tty_key_down : tty_key_up;
+            key_event.character = charset_key;
+            tty_send_key_event(&key_event);
+        }
+    }
+}
+
+bool ps2_kbd_mod_shift_pressed() {
+    if(getbit(_ps2_kbd_mod_state, ps2_kbd_left_shift) == 1 || getbit(_ps2_kbd_mod_state, ps2_kbd_right_shift) == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ps2_kbd_mod_ctrl_pressed() {
+    if(getbit(_ps2_kbd_mod_state, ps2_kbd_left_ctrl) == 1 || getbit(_ps2_kbd_mod_state, ps2_kbd_right_ctrl) == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ps2_kbd_mod_alt_pressed() {
+    if(getbit(_ps2_kbd_mod_state, ps2_kbd_left_alt) == 1 || getbit(_ps2_kbd_mod_state, ps2_kbd_right_alt) == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ps2_kbd_scancode_complete(uint8_t * scancode, size_t length) {
     bool result = true;
     switch(length) {
     case 1:

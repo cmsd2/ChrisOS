@@ -19,7 +19,7 @@ void terminal_enable_serial_console(uint16_t port) {
 void terminal_disable_serial_console() {
     serial_console_port = 0;
 }
- 
+
 uint8_t make_color(enum vga_color fg, enum vga_color bg)
 {
 	return fg | bg << 4;
@@ -58,13 +58,13 @@ void terminal_setcolor(uint8_t color)
 {
 	terminal_color = color;
 }
- 
+
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 {
 	const size_t index = y * VGA_WIDTH + x;
 	terminal_buffer[index] = make_vgaentry(c, color);
 }
- 
+
 void terminal_putchar(char c)
 {
 	if(c == '\n') {
@@ -72,7 +72,12 @@ void terminal_putchar(char c)
 			terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
 			terminal_column++;
 		}
-		
+        } else if(c == 0x08) {
+            /* backspace */
+            if(terminal_column > 0) {
+                terminal_column--;
+                terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
+            }
 	} else {
 		terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 		terminal_column++;
@@ -90,11 +95,10 @@ void terminal_putchar(char c)
         uart_putc_sync(serial_console_port, c);
     }
 }
- 
+
 void terminal_writestring(const char* data)
 {
 	size_t datalen = strlen(data);
 	for ( size_t i = 0; i < datalen; i++ )
 		terminal_putchar(data[i]);
 }
- 

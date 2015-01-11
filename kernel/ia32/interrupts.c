@@ -6,6 +6,7 @@
 #include <arch/idt.h>
 #include <arch/gdt.h>
 #include <arch/apic.h>
+#include <arch/power.h>
 #include <utils/kprintf.h>
 #include <utils/mem.h>
 #include <utils/panic.h>
@@ -132,11 +133,11 @@ void interrupts_isr_handler(struct registers regs)
         switch(regs.int_no) {
         case 14:
             kprintf("page fault accessing %x\n", regs.cr2);
-            __asm__ volatile ("hlt");
+            power_halt();
             break;
         case 13:
             kprintf("general protection fault\n");
-            __asm__ volatile ("hlt");
+            power_halt();
             break;
         default:
             break;

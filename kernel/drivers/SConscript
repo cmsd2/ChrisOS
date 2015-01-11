@@ -1,0 +1,5 @@
+Import('env')
+
+drivers_lib = env.Library('drivers', Glob('*.c'))
+
+Return('drivers_lib')

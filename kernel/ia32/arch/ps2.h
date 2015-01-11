@@ -77,6 +77,43 @@ typedef uint8_t ps2_ctrl_output_t;
 #define PS2_CTRL_OUTPUT_GET_1ST_PS2_CLOCK(ps2) getbit(ps2, 6)
 #define PS2_CTRL_OUTPUT_GET_1ST_PS2_DATA(ps2) getbit(ps2, 7)
 
+enum ps2_kbd_command {
+    ps2_kbd_set_leds = 0xed, // subcommand selects which leds
+    ps2_kbd_echo = 0xee,
+    ps2_kbd_scan_codes = 0xf0, // get or set. see subcommand
+    ps2_kbd_identify = 0xf2,
+    ps2_kbd_typematic = 0xf3, // see subcommand
+    ps2_kbd_enable_scanning = 0xf4,
+    ps2_kbd_disable_scanning = 0xf5,
+    ps2_kbd_set_defaults = 0xf6,
+
+    // these are for scancode set 3 only:
+    ps2_kbd_typematic_autorepeat_only = 0xf7,
+    ps2_kbd_make_release_only = 0xf8,
+    ps2_kbd_make_only = 0xf9,
+    ps2_kbd_typematic_autorepeat_make_release_only = 0xfa,
+
+    // also set 3, and subcommand selects which scancode they effect:
+    ps2_kbd_key_typematic_autorepeat_only = 0xfb,
+    ps2_kbd_key_make_release_only = 0xfc,
+    ps2_kbd_key_make_only = 0xfd,
+
+    ps2_kbd_resend = 0xfe,
+    ps2_kbd_reset_and_self_test = 0xff
+};
+
+enum ps2_kbd_mod_bits {
+    ps2_kbd_left_shift = 1,
+    ps2_kbd_right_shift,
+    ps2_kbd_left_ctrl,
+    ps2_kbd_right_ctrl,
+    ps2_kbd_left_alt,
+    ps2_kbd_right_alt,
+    ps2_kbd_caps_lock,
+    ps2_kbd_num_lock,
+    ps2_kbd_scroll_lock
+};
+
 struct ps2_async_command;
 
 typedef void (*ps2_async_callback)(enum ps2_controller_command cmd, uint8_t data);
@@ -114,7 +151,11 @@ int ps2_kbd_thread(void * data);
 void ps2_kbd_issue_next_command(void);
 bool ps2_kbd_handle_response(void);
 bool ps2_kbd_handle_scancode(uint8_t * scancode, size_t length);
+bool ps2_kbd_scancode_complete(uint8_t * scancode, size_t length);
 void ps2_kbd_print_scancode(uint8_t * scancode, size_t length);
+bool ps2_kbd_mod_shift_pressed(void);
+bool ps2_kbd_mod_ctrl_pressed(void);
+bool ps2_kbd_mod_alt_pressed(void);
 
 enum ps2_driver_state {
     waiting_command,

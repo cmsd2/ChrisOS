@@ -42,7 +42,7 @@ const int max_human_unit = sizeof(human_units) / sizeof(char *) - 1;
 #include <stdint.h>
 #include <utils/string.h>
 #include <utils/kprintf.h>
-#include <terminal/terminal.h>
+#include <drivers/tty.h>
 #include <sys/types.h>
 #include <sys/ctype.h>
 #include <sys/param.h>
@@ -434,7 +434,7 @@ number:
 }
 
 void putchar(int c, void * arg __attribute__ ((unused)) ) {
-	terminal_putchar((char)c);
+	tty_putc((char)c);
 }
 
 void
@@ -447,4 +447,3 @@ kprintf(const char *fmt, ...)
 	kvprintf(fmt, putchar, NULL, 10, ap);
 	va_end(ap);
 }
-

@@ -31,9 +31,31 @@
 #include <arch/ticks.h>
 #include <sys/hal.h>
 #include <sys/timer.h>
+#include <drivers/tty.h>
 
 void say_hello(timer_id_t id, void * data __unused) {
     kprintf("hello from timer %d\n", id);
+}
+
+int kapp(void * data) {
+    char line[81];
+    int len;
+    kprintf("started kapp\n");
+    while(1) {
+        len = tty_gets(line, 80);
+        if(len >= 0) {
+            if(len == 80) {
+                // didn't reach newline
+                line[len] = 0;
+            } else {
+                // chomp newline
+                line[len-1] = 0;
+            }
+            kprintf("you typed %d chars: %s\n", len, line);
+        } else {
+            kprintf("error in gets: %d\n", len);
+        }
+    }
 }
 
 void kmain()
@@ -128,12 +150,15 @@ void kmain()
 
     kprintf("Hello, kernel world!\n");
 
+    thread_spawn_kthread(kapp, "kapp", NULL);
+
     acpi_madt_print_subtables();
 
-    for(int i = 1; i <= 10; i++) {
+    for(int i = 1; i <= 2; i++) {
         timer_schedule_delay(i * 1000000, say_hello, NULL);
     }
 
+    tty_init();
     timers_init();
     ticks_init();
 

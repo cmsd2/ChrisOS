@@ -34,13 +34,14 @@ Export('env')
 
 ia32_lib = SConscript(env['ARCH'] + '/SConscript')
 boot_lib = SConscript('boot/SConscript')
+drivers_lib = SConscript('drivers/SConscript')
 mm_lib = SConscript('mm/SConscript')
 utils_lib = SConscript('utils/SConscript')
 kern_lib = SConscript('kern/SConscript')
 terminal_lib = SConscript('terminal/SConscript')
 tests_lib = SConscript('tests/SConscript')
 
-kenv = env.Clone(LIBS = kern_lib + boot_lib + utils_lib + mm_lib + ia32_lib + terminal_lib + tests_lib + acpica_lib + ['gcc'])
+kenv = env.Clone(LIBS = kern_lib + boot_lib + utils_lib + mm_lib + ia32_lib + terminal_lib + drivers_lib + tests_lib + acpica_lib + ['gcc'])
 kenv['_LIBFLAGS'] = '-Wl,--start-group ' + kenv['_LIBFLAGS'] + ' -Wl,--end-group'
 kernel = kenv.Program('kernel.bin', [])
 Depends('kernel.bin', kenv['LINKER_SCRIPT'])
