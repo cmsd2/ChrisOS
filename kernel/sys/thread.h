@@ -9,7 +9,7 @@
 
 #define STACK_SIZE 4096
 
-typedef unsigned int tid_t;
+typedef uint32_t tid_t;
 
 enum thread_state {
     thread_created = 0,
@@ -24,12 +24,16 @@ typedef int (*thread_func)(void * data);
 struct process;
 
 struct thread {
-    struct thread *next;
-    struct process *proc; // null for kernel threads
+    struct thread * next;
+    struct process * proc; // null for kernel threads
 
     // for scheduler's list of runnable/blocked processes
-    struct thread *scheduler_thread_next;
-    struct thread *scheduler_thread_prev;
+    struct thread * scheduler_thread_next;
+    struct thread * scheduler_thread_prev;
+
+    // for waiting on mutexes, file handles, whatever.
+    struct thread * wait_queue_next;
+    struct thread * wait_queue_prev;
 
     const char * name;
 

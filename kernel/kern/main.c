@@ -32,6 +32,20 @@
 #include <sys/hal.h>
 #include <sys/timer.h>
 #include <drivers/tty.h>
+#include <sys/mutex.h>
+
+struct mutex m;
+
+int exercise_mutex(void * data) {
+    while(1) {
+        mutex_acquire(&m);
+        mutex_print_info(&m);
+
+        current_thread_sleep_usecs(4000000);
+
+        mutex_release(&m);
+    }
+}
 
 int kapp(void * data) {
     char line[81];
@@ -156,6 +170,10 @@ void kmain()
     tty_init();
     timers_init();
     ticks_init();
+
+    thread_spawn_kthread(exercise_mutex, "exercise_mutex_1", NULL);
+    thread_spawn_kthread(exercise_mutex, "exercise_mutex_2", NULL);
+    thread_spawn_kthread(exercise_mutex, "exercise_mutex_3", NULL);
 
     kprintf("boostrap finished.\n");
     thread_exit(current_thread(), 0);

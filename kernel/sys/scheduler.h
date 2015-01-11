@@ -8,6 +8,14 @@ void scheduler_init(void);
 // select a runnable thread and switch to it
 void scheduler_yield(void);
 
+// atomically combine make_blocked(current_thread()) and yield()
+void scheduler_block(void);
+
+// test and set ptr to value or block until we can.
+// this is scheduler specific code to avoid missing wakeup
+// should release with __sync_release(ptr)
+void scheduler_wait_object_acquire(uint32_t * ptr, uint32_t value);
+
 uint32_t scheduler_lock(void);
 void scheduler_unlock(uint32_t flags);
 

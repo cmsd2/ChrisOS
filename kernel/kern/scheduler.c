@@ -47,6 +47,40 @@ void scheduler_yield() {
     interrupts_leave_cli(flags1);
 }
 
+void scheduler_wait_object_acquire(uint32_t * ptr, uint32_t value) {
+    struct thread * next_thread;
+    uint32_t flags1 = interrupts_enter_cli();
+    uint32_t flags2 = scheduler_lock();
+
+    while(__sync_val_compare_and_swap(ptr, 0, value) != value) {
+        scheduler_make_blocked(current_thread());
+
+        next_thread = scheduler_next_thread();
+        assert(next_thread);
+
+        scheduler_unlock(flags2);
+
+        process_context_switch(next_thread);
+
+        flags2 = scheduler_lock();
+    }
+
+    scheduler_unlock(flags2);
+    interrupts_leave_cli(flags1);
+}
+
+void scheduler_block() {
+    uint32_t flags1 = interrupts_enter_cli();
+    uint32_t flags2 = scheduler_lock();
+
+    scheduler_make_blocked(current_thread());
+
+    scheduler_unlock(flags2);
+
+    scheduler_yield();
+    interrupts_leave_cli(flags1);
+}
+
 struct thread * scheduler_next_thread() {
     struct thread * old_thread = current_thread();
 

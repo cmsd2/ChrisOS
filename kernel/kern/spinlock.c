@@ -14,7 +14,7 @@ uint32_t spinlock_acquire(struct spinlock * lock) {
     tid_t me = current_thread_id();
     assert(me);
 
-    while(__sync_lock_test_and_set(&lock->owner, me) != me) {
+    while(__sync_val_compare_and_swap(&lock->owner, 0, me) != me) {
         // spin
     }
 

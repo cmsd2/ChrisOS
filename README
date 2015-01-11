@@ -86,6 +86,8 @@ ps2 keyboard interrupt handling
 system clock with really weird frequency
 asynchronous timer callbacks
 minmal tty system
+interrupt blocking spinlocks
+kthread blocking mutexes
 
 Wishlist:
 
