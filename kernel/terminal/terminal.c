@@ -3,13 +3,9 @@
 #include <boot/layout.h>
 #include <arch/uart.h>
 
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 24;
-
 size_t terminal_row;
 size_t terminal_column;
 uint8_t terminal_color;
-uint16_t* terminal_buffer;
 uint16_t serial_console_port;
 
 void terminal_enable_serial_console(uint16_t port) {
@@ -20,26 +16,16 @@ void terminal_disable_serial_console() {
     serial_console_port = 0;
 }
 
-uint8_t make_color(enum vga_color fg, enum vga_color bg)
-{
-    return fg | bg << 4;
-}
-
-uint16_t make_vgaentry(char c, uint8_t color)
-{
-    uint16_t c16 = c;
-    uint16_t color16 = color;
-    return c16 | color16 << 8;
-}
-
 void terminal_clear(void)
 {
-    for ( size_t y = 0; y < VGA_HEIGHT; y++ )
+    int viewport_height = vga_height();
+    int viewport_width = vga_width();
+
+    for ( size_t y = 0; y < viewport_height; y++ )
     {
-        for ( size_t x = 0; x < VGA_WIDTH; x++ )
+        for ( size_t x = 0; x < viewport_width; x++ )
         {
-            const size_t index = y * VGA_WIDTH + x;
-            terminal_buffer[index] = make_vgaentry(' ', terminal_color);
+            terminal_putentryat(' ', terminal_color, x, y);
         }
     }
 }
@@ -48,8 +34,7 @@ void terminal_initialize(void)
 {
     terminal_row = 0;
     terminal_column = 0;
-    terminal_color = make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
-    terminal_buffer = (uint16_t*) (0xB8000 + &KERNEL_VMA);
+    terminal_color = vga_make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
 
     terminal_clear();
 }
@@ -61,13 +46,13 @@ void terminal_setcolor(uint8_t color)
 
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 {
-    const size_t index = y * VGA_WIDTH + x;
-    terminal_buffer[index] = make_vgaentry(c, color);
+    vga_put_char(c, color, x, y);
 }
 
 // clear row y starting in column x
 void terminal_clear_line_end(size_t x, size_t y) {
-    while(x < VGA_WIDTH) {
+    int viewport_width = vga_width();
+    while(x < viewport_width) {
         terminal_putentryat(' ', terminal_color, x, y);
         x++;
     }
@@ -75,9 +60,12 @@ void terminal_clear_line_end(size_t x, size_t y) {
 
 void terminal_putchar(char c)
 {
+    int viewport_width = vga_width();
+    int viewport_height = vga_height();
+
     if(c == '\n') {
         terminal_clear_line_end(terminal_column, terminal_row);
-        terminal_column = VGA_WIDTH;
+        terminal_column = viewport_width;
     } else if(c == 0x08) {
         /* backspace */
         if(terminal_column > 0) {
@@ -89,14 +77,17 @@ void terminal_putchar(char c)
         terminal_column++;
     }
 
-    if (terminal_column == VGA_WIDTH) {
+    if (terminal_column == viewport_width) {
         terminal_column = 0;
         terminal_row++;
-        if (terminal_row == VGA_HEIGHT) {
-            terminal_row = 0;
+        if (terminal_row == viewport_height) {
+            vga_scroll_row();
+            terminal_row--;
         }
         terminal_clear_line_end(0, terminal_row);
     }
+
+    vga_move_cursor(terminal_row, terminal_column);
 
     if(serial_console_port) {
         uart_putc_sync(serial_console_port, c);

@@ -90,22 +90,16 @@ interrupt blocking spinlocks
 kthread blocking mutexes
 
 Wishlist:
-
 Next:
 fix system clock frequency 1 second != 1 second
-more complete process control blocks
-more complete kernel threads/tasks
-more complete bug-free paging
-more complete virtual memory management
-driver framework using tasks for split top/bottom half interrupt handling
-translate keyboard scancodes to useable keycodes
 framebuffer
-asynchronous programming using timers and tasks
 audit everything so far for races and concurrency bugs/flaws
-  now that we're messing with interrupts and interleaved execution
-  there's something that doesn't smell quite right about scheduler_yield 
-  and its locking across context switches.
-blocking mutexes
+  now that we're messing with interrupts and interleaved execution.
+  can we miss wakeup?
+  do we correctly hold locks across context switches?
+  is scheduler_yield really correct?
+object system
+completion ports
 
 Later:
 port newlib libc
@@ -119,6 +113,12 @@ vfs?
 better scheduler
 userspace
 syscalls
+ramdisk
+elf file loading
+multiprocessor support
+more complete process control blocks
+more complete bug-free paging
+more complete virtual memory management
 
 Much later:
 userspace threads
@@ -130,7 +130,6 @@ port to arm (raspberry pi)?
 lots of possibilities
 
 Much Much later and in no particular order:
-multiprocessor support
 investigate porting drivers from BSD or minix
 port to amd64
 networking stack

@@ -33,6 +33,7 @@
 #include <sys/timer.h>
 #include <drivers/tty.h>
 #include <sys/mutex.h>
+#include <drivers/vga.h>
 
 struct mutex m;
 
@@ -76,6 +77,7 @@ void kmain()
     paging_init();
     gdt_install();
 
+    vga_init();
     terminal_initialize();
 
     load_multiboot_info();
@@ -171,9 +173,9 @@ void kmain()
     timers_init();
     ticks_init();
 
-    thread_spawn_kthread(exercise_mutex, "exercise_mutex_1", NULL);
+    /*thread_spawn_kthread(exercise_mutex, "exercise_mutex_1", NULL);
     thread_spawn_kthread(exercise_mutex, "exercise_mutex_2", NULL);
-    thread_spawn_kthread(exercise_mutex, "exercise_mutex_3", NULL);
+    thread_spawn_kthread(exercise_mutex, "exercise_mutex_3", NULL);*/
 
     kprintf("boostrap finished.\n");
     thread_exit(current_thread(), 0);
