@@ -4,6 +4,15 @@
 #include <utlist.h>
 #include <sys/param.h>
 #include <utils/kprintf.h>
+#include <utils/mem.h>
+
+void mutex_init(struct mutex * m) {
+    memset(m, 0, sizeof(struct mutex));
+}
+
+void mutex_destroy(struct mutex * m) {
+    // nothing
+}
 
 bool mutex_trylock(struct mutex * m) {
     bool locked;

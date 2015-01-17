@@ -12,6 +12,8 @@ struct mutex {
     struct spinlock waiting_threads_lock;
 };
 
+void mutex_init(struct mutex * m);
+void mutex_destroy(struct mutex * m);
 bool mutex_trylock(struct mutex * m);
 void mutex_acquire(struct mutex * m);
 void mutex_release(struct mutex * m);
