@@ -16,7 +16,9 @@ def generate(env, **kwargs):
     env['AR'] = sysroot + target + 'ar'
     env['OBJCOPY'] = sysroot + target + 'objcopy'
     env['RANLIB'] = sysroot + target + 'ranlib'
-    env['CFLAGS'] = '-D__ChrisOS__ -std=gnu99 -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow'
+    env['GCC_FLAGS'] = '-D__ChrisOS__ -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow'
+    env['CFLAGS'] = env['GCC_FLAGS'] + ' -std=gnu99'
+    env['CXXFLAGS'] = env['GCC_FLAGS'] + ' -std=c++11 -fno-rtti -fno-exceptions'
     env['LINKFLAGS'] = ''
 
 def exists(env):
