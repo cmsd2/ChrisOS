@@ -33,7 +33,7 @@ void paging_pd_entry_present(pd_entry *e) {
 bool paging_pd_entry_is_present(pd_entry *e) {
 	if(*e & I86_PDE_PRESENT) {
 		return true;
-	} else{ 
+	} else{
 		return false;
 	}
 }
@@ -55,7 +55,7 @@ void paging_pd_entry_set_flags(pd_entry *e, uint32_t flags, uint32_t mask) {
 }
 
 /*
- * frame is aligned to PAGE_SIZE * PT_ENTRIES 
+ * frame is aligned to PAGE_SIZE * PT_ENTRIES
  */
 void paging_pd_entry_set_frame(pd_entry *e, uintptr_t frame) {
 	if(frame & ~(I86_PDE_FRAME)) {
@@ -70,7 +70,7 @@ uintptr_t paging_pd_entry_get_frame(pd_entry *e) {
 
 void paging_init(void) {
 	paging_init_kernel_page_dir();
-	paging_identity_map(_kernel_page_dir, 0L, PT_ENTRIES * PAGE_SIZE, I86_PTE_PRESENT | I86_PTE_WRITABLE);
+	paging_identity_map(_kernel_page_dir, 0L, PT_ENTRIES * PAGE_SIZE, I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_USER);
 	paging_map_kernel(_kernel_page_dir);
 	paging_load_page_dir(_kernel_page_dir);
 	paging_enable();
@@ -84,7 +84,7 @@ void paging_load_page_dir(struct page_directory * pd) {
 	__asm__ volatile (
 		"mov %0, %%eax\n"
 		"mov %%eax, %%cr3\n"
-	: 
+	:
 	: "r" (((uintptr_t)pd) - (uintptr_t)&KERNEL_VMA)
 	: "%eax");
 }
@@ -132,9 +132,9 @@ void paging_unmap(struct page_directory * ptd, uintptr_t vaddr, size_t size) {
         pt_id = paging_pt_entry_id_for_addr(vaddr);
 
 		cur_pages = MIN(pages, PT_ENTRIES - pt_id);
-		
+
         //kprintf("unmapping %u pages at vaddr 0x%x\n", cur_pages, vaddr);
-		
+
         paging_pt_unmap(pt, vaddr, cur_pages);
 
 		pages -= cur_pages;
@@ -151,7 +151,7 @@ void paging_map_kernel(struct page_directory * ptd) {
 	uintptr_t start = align_address_down(_kernel_layout.segment_start, PT_ENTRIES * PAGE_SIZE);
 	uintptr_t size = _kernel_layout.memory_end - start;
 
-	paging_map(ptd, 0, size, start, I86_PTE_PRESENT | I86_PTE_WRITABLE);
+	paging_map(ptd, 0, size, start, I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_USER);
 }
 
 void paging_init_kernel_page_dir(void) {
@@ -185,7 +185,7 @@ void paging_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, u
 			} else {
 				kprintf("allocating page table at 0x%x\n", pt);
 			}
-		    paging_pd_install_pt(pde, pt, I86_PDE_PRESENT | I86_PDE_WRITABLE);
+		    paging_pd_install_pt(pde, pt, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
 		} else if(!paging_pd_entry_is_present(pde)) {
             kprintf("pd entry %lx is weird\n", *pde);
 			panic("paging pd entry is not present");
@@ -313,4 +313,3 @@ struct page_table * paging_new_pt_map(uintptr_t vaddr, uintptr_t base_addr, int 
 
 	return pt;
 }
-

@@ -103,4 +103,6 @@ extern void isr0x4d(void);
 extern void isr0x4e(void);
 extern void isr0x4f(void);
 
+extern void isr0x80(void);
+
 #endif

@@ -6,7 +6,7 @@
 #include <arch/registers.h>
 #include <sys/hal.h>
 
-#define HZ 100
+#define HZ 50
 
 typedef unsigned long ticks_counter_t;
 

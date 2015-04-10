@@ -7,6 +7,7 @@
 #include <sys/scheduler.h>
 #include <utils/kprintf.h>
 #include <arch/interrupts.h>
+#include <boot/layout.h>
 
 struct thread *_free_threads;
 
@@ -155,9 +156,18 @@ void thread_context_switch(struct thread *t) {
         p_old_thread_ctx = &old_thread->stack_context;
     }
 
+    kprintf("switching from %s to %s\n", _current_thread ? _current_thread->name : "", t->name);
     _current_thread = t;
 
+    if(t->name[0] == 'u') {
+        kprintf("switching to user mode app at addr 0x%lx!\n", t->stack_context->frame.eip);
+    }
+    if(t->stack_context->frame.eip < KERNEL_VMA) {
+        panic("about to stack switch to weird return address");
+    }
     stack_switch(p_old_thread_ctx, t->stack_context);
+
+    kprintf("switched\n");
 }
 
 void current_thread_sleep() {

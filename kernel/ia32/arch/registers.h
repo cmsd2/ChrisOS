@@ -25,6 +25,16 @@ struct registers
 
 };
 
+struct iret_ring3_stack_frame {
+    uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
+    uint32_t esp;
+    uint32_t ss;
+
+    void * args[0];
+};
+
 // stack layout for using iret between kernel threads only.
 // push args then eflags then use a far call.
 struct iret_stack_frame {

@@ -14,6 +14,7 @@
 #include <sys/process.h>
 #include <sys/thread.h>
 #include <sys/scheduler.h>
+#include <boot/layout.h>
 
 struct interrupt_handler * handlers[MAX_INTERRUPTS];
 struct interrupt_handler * _free_handlers;
@@ -120,6 +121,16 @@ void interrupts_isr_handler(struct registers regs)
 
     interrupts_cpu_enter();
 
+    if(current_thread() && current_thread()->name[0] == 'u') {
+        // interrupt in user mode app!
+        kprintf("interrupted user mode app\n");
+    }
+
+    if(regs.eip < KERNEL_VMA) {
+        registers_dump(&regs);
+        panic("error: came from weird address 0x%lx\n");
+    }
+
 #ifdef REENTRANT_INTERRUPTS
     interrupts_enable();
 #endif
@@ -139,7 +150,12 @@ void interrupts_isr_handler(struct registers regs)
             kprintf("general protection fault\n");
             power_halt();
             break;
+        case 128:
+            kprintf("syscall\n");
+            power_halt();
+            break;
         default:
+            power_halt();
             break;
         }
     }
@@ -154,6 +170,11 @@ void interrupts_isr_handler(struct registers regs)
         interrupts_enable();
 
         scheduler_yield();
+    }
+
+    if(regs.eip < KERNEL_VMA) {
+        registers_dump(&regs);
+        panic("error: came from weird address 0x%lx\n");
     }
 }
 
@@ -221,6 +242,8 @@ void interrupts_install_handlers(void) {
         idt_set_gate(0x4d, (uint32_t)isr0x4d, cs, flags);
         idt_set_gate(0x4e, (uint32_t)isr0x4e, cs, flags);
         idt_set_gate(0x4f, (uint32_t)isr0x4f, cs, flags);
+
+        idt_set_gate(0x80, (uint32_t)isr0x80, cs, flags);
 
 	idt_flush();
 }

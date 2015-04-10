@@ -34,8 +34,20 @@
 #include <drivers/tty.h>
 #include <sys/mutex.h>
 #include <drivers/vga.h>
+#include <sys/string.h>
+#include <arch/tss.h>
 
 struct mutex m;
+
+int user_mode_app(void * data) {
+    kprintf("hello from user mode app main. in ring 0, about to switch to ring 3.");
+    tss_switch_to_user_mode();
+    __asm__("xor %eax, %eax");
+    __asm__("int $0x80");
+    while(1) {
+
+    }
+}
 
 int exercise_mutex(void * data) {
     while(1) {
@@ -173,10 +185,29 @@ void kmain()
     timers_init();
     ticks_init();
 
+    thread_spawn_kthread(user_mode_app, "user_mode_app", NULL);
     /*thread_spawn_kthread(exercise_mutex, "exercise_mutex_1", NULL);
     thread_spawn_kthread(exercise_mutex, "exercise_mutex_2", NULL);
     thread_spawn_kthread(exercise_mutex, "exercise_mutex_3", NULL);*/
 
+    /*object_static_init();
+    klass_static_init();
+    klass_klass_static_init();
+    string_static_init();
+    struct string * s = string_create_from_c_str("hello Object Oriented World!");
+    struct object * o = (struct object *)s;
+    struct object_klass * ok = (struct object_klass *)o->klass;
+    kprintf("%s\n", string_to_c_str(s));
+    ok->destroy(o);*/
+    //((struct object_klass *)((struct object *)s)->klass)->destroy(s);
+
+    kprintf("gdt kcode access: 0x%hhx\n", gdt_kernel_code_access());
+    kprintf("gdt kdata access: 0x%hhx\n", gdt_kernel_data_access());
+    kprintf("gdt ucode access: 0x%hhx\n", gdt_user_code_access());
+    kprintf("gdt udata access: 0x%hhx\n", gdt_user_data_access());
+    kprintf("gdt  granularity: 0x%hhx\n", (int)gdt_32bit_granularity(true));
+
     kprintf("boostrap finished.\n");
+
     thread_exit(current_thread(), 0);
 }

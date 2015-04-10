@@ -30,8 +30,9 @@ isr_initial_handler:
 	mov %ax, %gs
 
 	#TODO: what stack are we using here exactly?
+isrs_initial_handler_handler_start:
 	call interrupts_isr_handler
-
+isrs_initial_handler_handler_done:
 	pop %eax
 	mov %ax, %ds
 	mov %ax, %es
@@ -43,6 +44,7 @@ isr_initial_handler:
 
 	add $8, %esp # unpush isr error code and irq number
 
+isrs_initial_handler_iret:
 	iret # rets and pops cs, ss, ip, sp and flags
 
 
@@ -108,3 +110,6 @@ ISR_NOERRCODE(0x4c)
 ISR_NOERRCODE(0x4d)
 ISR_NOERRCODE(0x4e)
 ISR_NOERRCODE(0x4f)
+
+// system call
+ISR_NOERRCODE(0x80)

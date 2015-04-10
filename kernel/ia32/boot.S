@@ -30,7 +30,7 @@ _bootstrap_page_directory_end:
 gdt_desc:
 	.short (gdt_end - gdt - 1) # size-1 of the GDT
 	.int (gdt - KERNEL_VMA) # physical address of GDT
- 
+
 .align 8
 gdt:
 	# 3 entries, each 8 bytes long:
@@ -38,11 +38,11 @@ gdt:
 	# null gate:
 	.int 0, 0
 
-	# code selector 0x08: base 0x00000000, limit 0xFFFFFFFF, 
+	# code selector 0x08: base 0x00000000, limit 0xFFFFFFFF,
 	# type 0x9A, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x9A, 0xCF, 0x00
 
-	# data selector 0x10: base 0x00000000, limit 0xFFFFFFFF, 
+	# data selector 0x10: base 0x00000000, limit 0xFFFFFFFF,
 	# type 0x92, granularity 0xCF
 	.byte 0xFF, 0xFF, 0, 0, 0, 0x92, 0xCF, 0x00
 
@@ -50,7 +50,7 @@ gdt:
 	#.byte 0xFF, 0xFF, 0, 0, 0, 0xFA, 0xCF, 0x00
 	#.byte 0xFF, 0xFF, 0, 0, 0, 0xF2, 0xCF, 0x00
 gdt_end:
- 
+
 
 
 .section .multiboot
@@ -99,16 +99,16 @@ _start_higher_half:
 	mov %ax, %fs
 	mov %ax, %gs
 	mov %ax, %ss
- 
+
 	mov $stack_top, %esp
- 
+
 	call kmain
- 
+
 	cli
 	hlt
 .Lhang:
 	jmp .Lhang
- 
+
 # this function does the same thing of the 'start' one, this time with
 # the real GDT
 .globl gdt_flush
@@ -122,11 +122,8 @@ gdt_flush:
 	movw %ax, %ss
 
 	jmp $0x08, $flush2
- 
+
 flush2:
 	ret
- 
 
 .section .bss
- 
-

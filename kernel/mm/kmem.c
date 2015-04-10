@@ -44,7 +44,7 @@ bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm
         return false;
     }
 
-    paging_map(_kernel_page_dir, p_addr, size, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE);
+    paging_map(_kernel_page_dir, p_addr, size, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
 
     if(flush) {
         paging_flush();
@@ -73,7 +73,7 @@ bool kmem_page_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, bool flush
     bool ok = allocator_mem_alloc(&_kern_pm_alloc_map, KMEM_PAGE_SIZE, KMEM_PAGE_SIZE, ALLOC_PM_NORMAL, &p_addr);
     if(ok) {
         //todo: this shouldn't be here
-        paging_map(_kernel_page_dir, p_addr, KMEM_PAGE_SIZE, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE);
+        paging_map(_kernel_page_dir, p_addr, KMEM_PAGE_SIZE, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
         if(flush) {
             paging_flush();
         }
@@ -152,7 +152,7 @@ uintptr_t kmem_vm_alloc(size_t size) {
     struct allocator_map * am = &_kern_vm_space.vm_alloc_map;
 
     mm_ptr_t addr_result = 0;
-    
+
     if(allocator_mem_alloc(am, size, 0, ALLOC_VM_KERNEL, &addr_result)) {
         vm_map_region_add_new(&_kern_vm_space.vm_map, addr_result, size);
     }
@@ -231,4 +231,3 @@ struct kmem_page * kmem_page_struct_alloc() {
 void kmem_page_struct_free(struct kmem_page *page) {
     LL_PREPEND(_page_struct_free_list, page);
 }
-
