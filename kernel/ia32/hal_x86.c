@@ -147,8 +147,6 @@ bool hal_x86_fast_irq_handler(uint32_t int_no, struct registers * regs, void * d
         }
     }
 
-    apic_eoi();
-
     return fast_handler_result != IRQ_PASS ? true : false;
 }
 
