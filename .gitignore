@@ -11,9 +11,13 @@ kernel.bin
 .*.swp
 *.old
 *.bak
+*~
+.sconsign.dblite
 CMakeCache.txt
 CopyOfCMakeCache.txt
 CMakeFiles
 cmake_install.cmake
 ChrisOS_config.h
-kernel/kernel
+/kernel/kernel
+/kernel/kernel-stripped.bin
+/kernel/kernel.sym

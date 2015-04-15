@@ -34,8 +34,10 @@
 #include <drivers/tty.h>
 #include <sys/mutex.h>
 #include <drivers/vga.h>
-#include <sys/string.h>
 #include <arch/tss.h>
+#include <arch/power.h>
+
+char uma_stack[4096];
 
 struct mutex m;
 
@@ -100,12 +102,13 @@ void kmain()
     kprintf("kernel mem start: 0x%x\n", _kernel_layout.memory_start);
     kprintf("kernel mem end: 0x%x\n", _kernel_layout.memory_end);
 
-    //multiboot_print_info();
-
     interrupts_init();
     pic_init();
+    pic_mask_all();
 
     interrupts_enable();
+
+    paging_cleanup_bootstrap();
 
     uart_init();
     uart_enable(UART_COM1);
@@ -182,8 +185,6 @@ void kmain()
     acpi_madt_print_subtables();
 
     tty_init();
-    timers_init();
-    ticks_init();
 
     thread_spawn_kthread(user_mode_app, "user_mode_app", NULL);
     /*thread_spawn_kthread(exercise_mutex, "exercise_mutex_1", NULL);
@@ -208,6 +209,9 @@ void kmain()
     kprintf("gdt  granularity: 0x%hhx\n", (int)gdt_32bit_granularity(true));
 
     kprintf("boostrap finished.\n");
+
+    timers_init();
+    ticks_init();
 
     thread_exit(current_thread(), 0);
 }

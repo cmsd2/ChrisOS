@@ -64,6 +64,12 @@ struct context {
     struct iret_stack_frame frame;
 };
 
+// describes layout in tss stack
+struct tss_stack {
+    uint32_t esp;
+    uint32_t ss;
+};
+
 typedef uint32_t flags_reg_t;
 typedef uint32_t cr_reg_t;
 

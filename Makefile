@@ -1,5 +1,5 @@
 all:
-	scons --sysroot=/usr/local/cross/ia32
+	scons --sysroot=${HOME}/cross/ia32
 
 clean:
 	scons -c

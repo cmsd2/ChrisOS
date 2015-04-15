@@ -37,4 +37,7 @@ struct tss_entry
 
 void tss_switch_to_user_mode(void);
 
+void tss_flush(void);
+
+void tss_set_stack_for_current_thread(void);
 #endif

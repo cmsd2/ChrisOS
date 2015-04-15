@@ -40,7 +40,7 @@ void gdt_install()
     gdt_set_gate(3, 0, 0xFFFFFFFF, gdt_user_code_access(), gran);
     gdt_set_gate(4, 0, 0xFFFFFFFF, gdt_user_data_access(), gran);
 
-    gdt_set_tss(5, (unsigned long)&tss - KERNEL_VMA, sizeof(tss), false);
+    gdt_set_tss(5, (unsigned long)&tss, sizeof(tss), false);
 
     tss.ss0 = 0x10;
     tss.esp0 = 0;

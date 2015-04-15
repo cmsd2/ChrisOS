@@ -8,6 +8,7 @@
 #include <sys/timer.h>
 
 #define STACK_SIZE 4096
+#define KERNEL_STACK_SIZE 4096
 
 typedef uint32_t tid_t;
 
@@ -45,7 +46,9 @@ struct thread {
     // stack state for actual context switch
     struct context * stack_context;
     uintptr_t stack;
+    uintptr_t kernel_stack;
     size_t stack_size;
+    size_t kernel_stack_size;
 
     thread_func func;
     void * data;

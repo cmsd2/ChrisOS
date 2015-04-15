@@ -3,18 +3,27 @@
 #include <utils/kprintf.h>
 #include <utils/panic.h>
 
+unsigned char pic_irq_for_interrupt(unsigned char int_no) {
+	unsigned char result;
+	result = int_no - PIC_IRQ1_BASE;
+	if(result >= PIC_MAX_IRQS) {
+		result = int_no - PIC_IRQ2_BASE + PIC_MAX_IRQS;
+	}
+	return result;
+}
+
 unsigned char pic_interrupt_for_irq(unsigned char irq) {
     if(irq < PIC_MAX_IRQS) {
         return irq + PIC_IRQ1_BASE;
     } else {
-        return irq + PIC_IRQ2_BASE;
+        return irq - PIC_MAX_IRQS + PIC_IRQ2_BASE;
     }
 }
 
 void pic_init(void) {
     pic_map_irqs(PIC_IRQ1_BASE, PIC_IRQ2_BASE);
 
-    pic_mask_all();
+    pic_unmask_all();
 }
 
 // mostly follows wiki.osdev.org/8259_PIC
@@ -54,6 +63,11 @@ void pic_map_irqs(unsigned int irq_base_1, unsigned int irq_base_2) {
 void pic_mask_all(void) {
     outb(PIC1_DATA, 0xff);
     outb(PIC2_DATA, 0xff);
+}
+
+void pic_unmask_all(void) {
+    outb(PIC1_DATA, 0x0);
+    outb(PIC2_DATA, 0x0);
 }
 
 void pic_eoi(unsigned char irq) {

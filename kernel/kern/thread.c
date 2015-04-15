@@ -8,6 +8,7 @@
 #include <utils/kprintf.h>
 #include <arch/interrupts.h>
 #include <boot/layout.h>
+#include <arch/gdt.h>
 
 struct thread *_free_threads;
 
@@ -81,8 +82,15 @@ int thread_init(struct thread * t, thread_func f, void * data) {
         return -1;
     }
 
+    t->kernel_stack = (uintptr_t)malloc(KERNEL_STACK_SIZE);
+    if(!t->kernel_stack) {
+        free((void*)t->stack);
+        return -1;
+    }
+
     t->name = "";
     t->stack_size = STACK_SIZE;
+    t->kernel_stack_size = KERNEL_STACK_SIZE;
     t->func = f;
     t->data = data;
     t->stack_context = stack_init(t->stack, t->stack_size, thread_entry_point, t);
@@ -165,6 +173,8 @@ void thread_context_switch(struct thread *t) {
     if(t->stack_context->frame.eip < KERNEL_VMA) {
         panic("about to stack switch to weird return address");
     }
+
+    tss_set_stack(t->kernel_stack + t->kernel_stack_size);
     stack_switch(p_old_thread_ctx, t->stack_context);
 
     kprintf("switched\n");

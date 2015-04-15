@@ -32,8 +32,10 @@ enum pic {
 #define ICW4_SPECIAL_FULLY_NESTED_MODE 0x10
 
 unsigned char pic_interrupt_for_irq(unsigned char irq);
+unsigned char pic_irq_for_interrupt(unsigned char int_no);
 void pic_init(void);
 void pic_mask_all();
+void pic_unmask_all();
 void pic_map_irqs(unsigned int irq_base_1, unsigned int irq_base_2);
 void pic_eoi(unsigned char irq);
 void pic_mask(unsigned char irq);
