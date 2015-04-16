@@ -36,6 +36,7 @@
 #include <drivers/vga.h>
 #include <arch/tss.h>
 #include <arch/power.h>
+#include <sys/syscall.h>
 
 char uma_stack[4096];
 
@@ -44,8 +45,7 @@ struct mutex m;
 int user_mode_app(void * data) {
     kprintf("hello from user mode app main. in ring 0, about to switch to ring 3.");
     tss_switch_to_user_mode();
-    __asm__("xor %eax, %eax");
-    __asm__("int $0x80");
+    syscall_halt();
     while(1) {
 
     }
@@ -185,6 +185,8 @@ void kmain()
     acpi_madt_print_subtables();
 
     tty_init();
+
+    syscalls_init();
 
     thread_spawn_kthread(user_mode_app, "user_mode_app", NULL);
     /*thread_spawn_kthread(exercise_mutex, "exercise_mutex_1", NULL);
