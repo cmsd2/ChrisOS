@@ -16,7 +16,7 @@ boot.S is inspired by examples available on osdev.org. The intention is that
 code on that site is in the public domain, but the actual provenance of
 each example is harder to determine.
 
-GDT, IDT and interrupts code is based on examples from James Molloy
+syscalls, GDT, IDT and interrupts code is based on examples from James Molloy
 at www.jamesmolloy.co.uk and is openly licensed in this forum post:
 http://forum.osdev.org/viewtopic.php?p=201752#p201752
 basically: ownership retained, all other rights waived, but with a disclaimer.
@@ -55,7 +55,7 @@ Current problems:
 interrupt handling is really messy
 paging code is too complicated
 no slab allocators yet
-too reliant on kprintf, and tiny 80x24 vga non-scrolling display :(
+too reliant on kprintf
 how to make io nice or at least useable?
 
 Features done:
@@ -65,7 +65,7 @@ tested on qemu, bochs and vmware fusion.
 requires multiboot, reads info from multiboot params
 jump to higher half
 handle interrupts
-printf to 80x24 vga screen
+printf to 80x25 vga screen
 basic buggy paging
 iffy virtual memory management
 basic local apic support
@@ -85,9 +85,13 @@ acpi apic config
 ps2 keyboard interrupt handling
 system clock with really weird frequency
 asynchronous timer callbacks
-minmal tty system
+minimal tty system
+basic write-only serial console for kprintf
 interrupt blocking spinlocks
 kthread blocking mutexes
+ring0 -> ring3 switching
+ring3 -> ring0 interrupt
+syscalls
 
 Wishlist:
 Next:
@@ -100,19 +104,24 @@ audit everything so far for races and concurrency bugs/flaws
   is scheduler_yield really correct?
 object system
 completion ports
+rewrite memory management + paging. make it work with more than one process
+figure out how microkernel arch might look
 
 Later:
+make more stuff in kernel/ia32/ useable via HAL
+revisit distinction between IRQs and interrupts
+audit ring3/ring0 separation
 port newlib libc
 add i686-chrisos-elf target support to gcc
 interactive console
 rust support. needs either a libc or patches to rust build
+c++ support. needs stack unwinding for exceptions, and global initialisation
 Evaluate micro or monolithic designs.
 (best effort) Realtime features?
 fat16
 vfs?
 better scheduler
 userspace
-syscalls
 ramdisk
 elf file loading
 multiprocessor support
