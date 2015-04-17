@@ -34,6 +34,73 @@ void kmem_load_layout(void) {
     allocator_range_acquire(&_kern_vm_space.vm_alloc_map, _kernel_layout.segment_start, _kernel_layout.memory_end - _kernel_layout.segment_start);
 }
 
+pm_ptr_t kmem_frame_alloc() {
+    return kmem_frames_alloc(1);
+}
+
+pm_ptr_t kmem_frames_alloc(size_t num_frames) {
+    pm_ptr_t p_addr;
+
+    if(true == allocator_mem_alloc(&_kern_pm_alloc_map, KMEM_PAGE_SIZE * num_frames, KMEM_PAGE_SIZE, ALLOC_PM_NORMAL, &p_addr)) {
+	kprintf("allocated %ld frames ok at 0x%lx\n", num_frames, p_addr);
+	return p_addr;
+    } else {
+	return 0;
+    }
+}
+
+void kmem_frame_free(pm_ptr_t p_addr) {
+    kmem_frames_free(p_addr, 1);
+}
+
+void kmem_frames_free(pm_ptr_t p_addr, size_t num_frames) {
+    allocator_mem_free(&_kern_pm_alloc_map, p_addr, KMEM_PAGE_SIZE * num_frames, ALLOC_PM_NORMAL);
+}
+
+pm_ptr_t kmem_frame_clone(pm_ptr_t addr) {
+    return kmem_frames_clone(addr, 1);
+}
+
+pm_ptr_t kmem_frames_clone(pm_ptr_t src_pm_addr, size_t num_frames) {
+    pm_ptr_t dest_pm_addr = kmem_frames_alloc(num_frames);
+    if(!dest_pm_addr) {
+	goto err_cleanup;
+    }
+
+    vm_ptr_t src_vm_addr = 0, dest_vm_addr = 0;
+
+    kmem_pages_map(src_pm_addr, num_frames, false, &src_vm_addr);
+    if(!src_vm_addr) {
+	goto err_cleanup;
+    }
+
+    kmem_pages_map(dest_pm_addr, num_frames, true, &dest_vm_addr);
+    if(!dest_vm_addr) {
+	goto err_cleanup;
+    }
+	    
+    memcpy((void*)dest_vm_addr, (const void*)src_vm_addr, KMEM_PAGE_SIZE * num_frames);
+
+    goto cleanup;
+
+err_cleanup:
+    if(dest_pm_addr) {
+	kmem_frames_free(dest_pm_addr, num_frames);
+	dest_pm_addr = 0;
+    }
+
+cleanup:
+    if(src_vm_addr) {
+	kmem_pages_unmap(src_vm_addr, true);
+    }
+
+    if(dest_vm_addr) {
+	kmem_pages_unmap(dest_vm_addr, true);
+    }
+
+    return dest_pm_addr;
+}
+
 bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm_addr_result) {
     size_t size = num_pages * KMEM_PAGE_SIZE;
     uintptr_t vm_addr = kmem_vm_alloc(size);
@@ -70,8 +137,7 @@ bool kmem_pages_unmap(vm_ptr_t vm_addr, bool flush) {
 
 bool kmem_page_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, bool flush) {
     pm_ptr_t p_addr;
-    bool ok = allocator_mem_alloc(&_kern_pm_alloc_map, KMEM_PAGE_SIZE, KMEM_PAGE_SIZE, ALLOC_PM_NORMAL, &p_addr);
-    if(ok) {
+    if(p_addr = kmem_frame_alloc()) {
         //todo: this shouldn't be here
         paging_map(_kernel_page_dir, p_addr, KMEM_PAGE_SIZE, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
         if(flush) {
@@ -80,7 +146,7 @@ bool kmem_page_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, bool flush
     } else {
         kprintf("failed to wire page vaddr=%lx paddr=%lx\n", vm_addr, p_addr);
     }
-    return ok;
+    return p_addr ? true : false;
 }
 
 void kmem_pages_list_free(struct kmem_page_list * page_list) {
@@ -124,12 +190,15 @@ handle_error:
 
 // return a page to the allocator, but with what flags???
 void kmem_page_free(vm_ptr_t vm_addr, enum alloc_region_flags flags, bool flush) {
-    allocator_mem_free(&_kern_pm_alloc_map, vm_addr, KMEM_PAGE_SIZE, flags);
+    //TODO how is this supposed to work.. should free the physical frame here
+    //kmem_frame_free(??what address??)
+    //allocator_mem_free(&_kern_pm_alloc_map, vm_addr, KMEM_PAGE_SIZE, flags);
 
     //todo: too low level
     paging_unmap(_kernel_page_dir, vm_addr, KMEM_PAGE_SIZE);
 
     if(flush) {
+	// todo: just invalidate modified page(s)
         paging_flush();
     }
 }

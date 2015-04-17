@@ -54,6 +54,7 @@ void thread_system_init(void) {
     _current_thread = &new_thread;
 
     _current_thread = thread_alloc();
+    assert(_current_thread);
     *_current_thread = new_thread;
 }
 

@@ -29,6 +29,7 @@ struct kmem_page_list {
     enum alloc_region_flags flags;
 };
 
+// don't change this
 #define KMEM_PAGE_SIZE PAGE_SIZE
 
 #define KMEM_PAGE_ALIGN page_align
@@ -51,6 +52,13 @@ void kmem_pages_free(enum alloc_region_flags flags, vm_ptr_t vm_addr, size_t num
 
 bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm_addr_result);
 bool kmem_pages_unmap(vm_ptr_t vm_addr, bool flush);
+
+pm_ptr_t kmem_frame_alloc();
+pm_ptr_t kmem_frames_alloc(size_t num_frames);
+void kmem_frame_free(pm_ptr_t p_addr);
+void kmem_frames_free(pm_ptr_t p_addr, size_t num_frames);
+pm_ptr_t kmem_frame_clone(pm_ptr_t p_addr);
+pm_ptr_t kmem_frames_clone(pm_ptr_t p_addr, size_t num_frames);
 
 // allocate a region of naked kernel virtual address space
 uintptr_t kmem_vm_alloc(size_t size);

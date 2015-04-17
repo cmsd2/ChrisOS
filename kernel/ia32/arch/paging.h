@@ -8,6 +8,9 @@
 #define PDT_ENTRIES 1024
 #define PT_ENTRIES 1024
 
+// 0xc0000000 virtual memory area starts at this page table in the page directory
+#define PDT_KERNEL_START 768
+
 #define PAGE_SIZE 4096
 
 enum PAGE_PDE_FLAGS {
@@ -71,7 +74,8 @@ struct page_directory * paging_pd_current();
 struct page_directory * paging_pd_alloc();
 void paging_pd_free(struct page_directory * pd);
 void paging_pd_init(struct page_directory * pd);
-struct page_directory * paging_pd_clone(struct page_directory * pd);
+struct page_directory * paging_pd_clone(const struct page_directory * pd);
+pd_entry paging_pd_entry_clone(pd_entry e);
 void paging_pd_entry_invl(pd_entry *e);
 void paging_pd_entry_zero(pd_entry *e);
 void paging_pd_entry_present(pd_entry *e);
@@ -90,6 +94,9 @@ void paging_load_page_dir(struct page_directory *pd);
 void paging_init_pts(void);
 size_t paging_pt_map(struct page_table * pt, uintptr_t vaddr, uintptr_t base_addr, size_t pages, uint32_t flags);
 void paging_pt_unmap(struct page_table * pt, uintptr_t vaddr, size_t pages);
+struct page_table * paging_pt_clone(const struct page_table *pt);
+pt_entry paging_pt_entry_clone(pt_entry e);
+
 struct page_table * paging_alloc_static_pt(void);
 void paging_unmap(struct page_directory * ptd, uintptr_t base_addr, size_t size);
 void paging_identity_map(struct page_directory * ptd, uintptr_t base_addr, size_t size, uint32_t flags);
@@ -102,5 +109,7 @@ pd_entry * paging_pd_entry_for_addr(struct page_directory *pd, uintptr_t addr);
 void paging_pd_install_pt(pd_entry * pd, struct page_table * pt, uint32_t flags);
 struct page_table * paging_pt_for_pd_entry(pd_entry * pde);
 
+uintptr_t paging_page_clone_4mb(uintptr_t frame);
+uintptr_t paging_page_clone_4k(uintptr_t frame);
 
 #endif

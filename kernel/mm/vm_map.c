@@ -11,6 +11,14 @@ void vm_map_init(struct vm_map *map) {
     map->regions = 0;
 }
 
+void vm_map_init_copy(struct vm_map *map, struct vm_map *src) {
+    struct vm_map_region *region;
+
+    LL_FOREACH(map->regions, region) {
+	vm_map_region_add_new(map, region->address, region->size);
+    }
+}
+
 struct vm_map_region * vm_map_region_alloc() {
     struct vm_map_region * region;
     if(_free_regions) {

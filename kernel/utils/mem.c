@@ -120,12 +120,12 @@ void * memset(void * addr, uint8_t value, size_t len) {
 	return addr;
 }
 
-void * memcpy(void * dest, void * src, size_t len) {
+void * memcpy(void * dest, const void * src, size_t len) {
     //TODO optimise memcpy: don't use memmove
     return memmove(dest, src, len);
 }
 
-void * memmove(void * dest, void * src, size_t len) {
+void * memmove(void * dest, const void * src, size_t len) {
     //TODO optimise memmove: don't use single-byte operations
     if(dest < src) {
         kmemcpy_b_fwd(dest, src, len);
@@ -134,13 +134,13 @@ void * memmove(void * dest, void * src, size_t len) {
     }
 }
 
-void kmemcpy_b_fwd(uint8_t * dest, uint8_t * src, size_t len) {
+void kmemcpy_b_fwd(uint8_t * dest, const uint8_t * src, size_t len) {
     for(size_t i = 0; i < len; i++) {
 		dest[i] = src[i];
 	}
 }
 
-void kmemcpy_b_rev(uint8_t * dest, uint8_t * src, size_t len) {
+void kmemcpy_b_rev(uint8_t * dest, const uint8_t * src, size_t len) {
     for(size_t i = len; i > 0; i--) {
 		dest[i-1] = src[i-1];
 	}

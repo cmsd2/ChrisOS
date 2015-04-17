@@ -122,20 +122,28 @@ uintptr_t multiboot_relocate_str(uintptr_t physaddr) {
 }
 
 void multiboot_copy_mem_map_to_allocator(void) {
-	assert(_multiboot_info.flags & MULTIBOOT_INFO_MEM_MAP);
+    //TODO: should this be done in kmem_load_layout()?
 
-	uintptr_t mmap_end = _multiboot_info.mmap_addr + _multiboot_info.mmap_length;
-	uintptr_t mmap_cur = _multiboot_info.mmap_addr;
-	int i = 0;
-	enum alloc_region_flags flags = ALLOC_PM_NORMAL;
-	while(mmap_cur < mmap_end) {
-		struct multiboot_mmap_entry * mmap = (struct multiboot_mmap_entry *) mmap_cur;
-		if(mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
-			kern_pm_alloc_region_add(mmap->addr, mmap->len, flags);
-		}
-		i++;
-		mmap_cur += mmap->size + sizeof(mmap->size);
-	}
+    assert(_multiboot_info.flags & MULTIBOOT_INFO_MEM_MAP);
+
+    uintptr_t mmap_end = _multiboot_info.mmap_addr + _multiboot_info.mmap_length;
+    uintptr_t mmap_cur = _multiboot_info.mmap_addr;
+    int i = 0;
+    enum alloc_region_flags flags = ALLOC_PM_NORMAL;
+    while(mmap_cur < mmap_end) {
+        struct multiboot_mmap_entry * mmap = (struct multiboot_mmap_entry *) mmap_cur;
+        if(mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
+            if(mmap->addr) {
+                // if memory area doesn't start at 0:
+                kern_pm_alloc_region_add(mmap->addr, mmap->len, flags);
+            } else if(mmap->len > KMEM_PAGE_SIZE) {
+                // if memory area starts at 0, don't use first page:
+                kern_pm_alloc_region_add(mmap->addr + KMEM_PAGE_SIZE, mmap->len - KMEM_PAGE_SIZE, flags);
+            }
+        }
+        i++;
+        mmap_cur += mmap->size + sizeof(mmap->size);
+    }
 }
 
 

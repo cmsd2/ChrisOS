@@ -11,6 +11,14 @@ void allocator_map_init(struct allocator_map * map) {
     map->regions = 0;
 }
 
+void allocator_map_init_copy(struct allocator_map * map, struct allocator_map * src) {
+    struct allocator_region * region;
+
+    LL_FOREACH(map->regions, region) {
+	allocator_region_add_new(map, region->address, region->size, region->flags);
+    }
+}
+
 void allocator_region_add_new(struct allocator_map *map, uintptr_t addr, size_t size, enum alloc_region_flags flags) {
     struct allocator_region * region = allocator_region_alloc();
     assert(region);
