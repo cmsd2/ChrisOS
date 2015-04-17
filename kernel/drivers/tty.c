@@ -15,17 +15,17 @@ void tty_init() {
 }
 
 struct tty_line * tty_line_alloc() {
-    struct tty_line * result = (struct tty_line*)malloc(sizeof(struct tty_line));
+    struct tty_line * result = (struct tty_line*)kmalloc(sizeof(struct tty_line));
     memset(result, 0, sizeof(struct tty_line));
     return result;
 }
 
 void tty_line_free(struct tty_line * line) {
     if(line->data) {
-        free(line->data);
+        kfree(line->data);
         line->data = 0;
     }
-    free(line);
+    kfree(line);
 }
 
 int tty_puts(const char * data, size_t length) {
@@ -137,7 +137,7 @@ int tty_line_reserve_space(struct tty_line * line, size_t size) {
     size_t space = tty_line_write_space_available(line);
     if(space < size) {
         size_t new_capacity = MAX(size, line->capacity * 2);
-        char * new_data = (char*)realloc(line->data, new_capacity);
+        char * new_data = (char*)krealloc(line->data, new_capacity);
         if(new_data) {
             line->data = new_data;
             line->capacity = new_capacity;
@@ -159,7 +159,7 @@ size_t tty_line_read_chars_available(struct tty_line * line) {
 }
 
 struct tty_observer * tty_observer_new(struct thread * t) {
-    struct tty_observer * observer = (struct tty_observer *)malloc(sizeof(struct tty_observer));
+    struct tty_observer * observer = (struct tty_observer *)kmalloc(sizeof(struct tty_observer));
     memset(observer, 0, sizeof(struct tty_observer));
     observer->thread = t;
 
@@ -167,7 +167,7 @@ struct tty_observer * tty_observer_new(struct thread * t) {
 }
 
 void tty_observer_delete(struct tty_observer * o) {
-    free(o);
+    kfree(o);
 }
 
 int tty_wait_chars_available() {

@@ -18,11 +18,11 @@ void hal_init(void) {
 }
 
 struct hal_irq_handler * hal_x86_irq_handler_alloc() {
-    return (struct hal_irq_handler*)malloc(sizeof(struct hal_irq_handler));
+    return (struct hal_irq_handler*)kmalloc(sizeof(struct hal_irq_handler));
 }
 
 void hal_x86_irq_handler_free(struct hal_irq_handler * handler) {
-    free(handler);
+    kfree(handler);
 }
 
 void hal_x86_init_irq_lines() {

@@ -38,21 +38,21 @@ timer_id_t timer_next_id() {
 }
 
 struct timer_at_time * timer_at_time_alloc() {
-    struct timer_at_time * t = (struct timer_at_time *)malloc(sizeof(struct timer_at_time));
+    struct timer_at_time * t = (struct timer_at_time *)kmalloc(sizeof(struct timer_at_time));
     return t;
 }
 
 struct timer_at_offset * timer_at_offset_alloc() {
-    struct timer_at_offset * t = (struct timer_at_offset *)malloc(sizeof(struct timer_at_offset));
+    struct timer_at_offset * t = (struct timer_at_offset *)kmalloc(sizeof(struct timer_at_offset));
     return t;
 }
 
 void timer_at_time_free(struct timer_at_time * t) {
-    free(t);
+    kfree(t);
 }
 
 void timer_at_offset_free(struct timer_at_offset * t) {
-    free(t);
+    kfree(t);
 }
 
 int timer_far_timers_cmp(struct timer_at_time * a, struct timer_at_time * b) {

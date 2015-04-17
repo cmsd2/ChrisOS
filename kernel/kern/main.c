@@ -125,16 +125,16 @@ void kmain()
     thread_system_init();
 
     size_t size = 4096 * 100;
-    void * mem = malloc(size);
+    void * mem = kmalloc(size);
     kprintf("Alloc'd at addr=0x%lx\n", mem);
     memset(mem, 0xff, size);
-    free(mem);
+    kfree(mem);
     kprintf("Freed mem at addr=0x%lx\n", mem);
-    mem = malloc(4096 * 10);
-    void * mem2 = malloc(4096);
-    free(mem);
+    mem = kmalloc(4096 * 10);
+    void * mem2 = kmalloc(4096);
+    kfree(mem);
     kmalloc_print_info();
-    free(mem2);
+    kfree(mem2);
     kmalloc_print_info();
 
     multiboot_print_cmdline_info();

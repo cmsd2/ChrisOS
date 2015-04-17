@@ -88,11 +88,11 @@ ACPI_STATUS AcpiOsGetPhysicalAddress(void * virtual_address, ACPI_PHYSICAL_ADDRE
 }
 
 void * AcpiOsAllocate(ACPI_SIZE len) {
-    return malloc(len);
+    return kmalloc(len);
 }
 
 void AcpiOsFree(void * ptr) {
-    free(ptr);
+    kfree(ptr);
 }
 
 BOOLEAN AcpiOsReadable(void * ptr, ACPI_SIZE len) {

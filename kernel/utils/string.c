@@ -106,7 +106,7 @@ char * strdup(const char *s1) {
     size_t len = strlen(s1) + 1;
     char * result;
 
-    result = (char*)malloc(len);
+    result = (char*)kmalloc(len);
     for(i = 0; i < len; i++) {
         result[i] = s1[i];
     }
@@ -125,7 +125,7 @@ char * strndup(const char *s1, size_t n) {
         }
     }
 
-    result = malloc(n + 1);
+    result = kmalloc(n + 1);
 
     for(i = 0; i < n; i++) {
         result[i] = s1[i];

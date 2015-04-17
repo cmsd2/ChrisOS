@@ -25,11 +25,11 @@ void paging_clear_attr(uint32_t * e, uint32_t attr) {
 }
 
 struct page_directory * paging_pd_alloc() {
-    return malloc(sizeof(struct page_directory));
+    return kmalloc(sizeof(struct page_directory));
 }
 
 void paging_pd_free(struct page_directory * pd) {
-    free(pd);
+    kfree(pd);
 }
 
 void paging_pd_entry_invl(pd_entry *e) {

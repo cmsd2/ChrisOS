@@ -20,7 +20,7 @@ void kmalloc_print_info(void) {
 
 // return 0 on failure
 // return ptr to kernel memory area at least as big as size bytes otherwise
-void * malloc(size_t size) {
+void * kmalloc(size_t size) {
     uint32_t flags = malloc_lock(); //TODO: find a better way to do locking
 
     bool ok;
@@ -68,7 +68,7 @@ void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags fl
     return 0;
 }
 
-void free(void * mem) {
+void kfree(void * mem) {
     uint32_t flags = malloc_lock();
 
     if(mem) {
@@ -81,13 +81,13 @@ void free(void * mem) {
     malloc_unlock(flags);
 }
 
-void * realloc(void * ptr, size_t size) {
+void * krealloc(void * ptr, size_t size) {
     //kprintf("reallocating ptr %lx to size %ld\n", ptr, size);
-    void *new_ptr = malloc(size);
+    void *new_ptr = kmalloc(size);
 
     if(new_ptr && ptr) {
         memcpy(new_ptr, ptr, size);
-        free(ptr);
+        kfree(ptr);
     }
 
     return new_ptr;

@@ -10,10 +10,10 @@ void kmalloc_init(void);
 
 void kmalloc_print_info(void);
 
-void * malloc(size_t bytes);
-void * malloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags flags);
-void free(void * mem);
-void * realloc(void * ptr, size_t bytes);
+void * kmalloc(size_t bytes);
+void * kmalloc_aligned(size_t bytes, size_t alignment, enum alloc_region_flags flags);
+void kfree(void * mem);
+void * krealloc(void * ptr, size_t bytes);
 
 uint32_t malloc_lock(void);
 void malloc_unlock(uint32_t flags);

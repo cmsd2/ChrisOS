@@ -34,7 +34,7 @@ tid_t thread_next_id() {
 }
 
 struct thread * thread_alloc(void) {
-    struct thread *t = malloc(sizeof(struct thread));
+    struct thread *t = kmalloc(sizeof(struct thread));
     if(t) {
         memset(t, 0, sizeof(struct thread));
     }
@@ -42,7 +42,7 @@ struct thread * thread_alloc(void) {
 }
 
 void thread_free(struct thread *t) {
-    free(t);
+    kfree(t);
 }
 
 void thread_system_init(void) {
@@ -76,15 +76,15 @@ void thread_entry_point(void * data) {
 int thread_init(struct thread * t, thread_func f, void * data) {
     t->tid = thread_next_id();
     t->state = thread_created;
-    t->stack = (uintptr_t)malloc(STACK_SIZE);
+    t->stack = (uintptr_t)kmalloc(STACK_SIZE);
 
     if(!t->stack) {
         return -1;
     }
 
-    t->kernel_stack = (uintptr_t)malloc(KERNEL_STACK_SIZE);
+    t->kernel_stack = (uintptr_t)kmalloc(KERNEL_STACK_SIZE);
     if(!t->kernel_stack) {
-        free((void*)t->stack);
+        kfree((void*)t->stack);
         return -1;
     }
 

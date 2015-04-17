@@ -256,7 +256,7 @@ struct ps2_async_command * ps2_command_alloc() {
         cmd = _ps2_free_commands;
         LL_DELETE(_ps2_free_commands, cmd);
     } else {
-        cmd = (struct ps2_async_command *)malloc(sizeof(struct ps2_async_command));
+        cmd = (struct ps2_async_command *)kmalloc(sizeof(struct ps2_async_command));
     }
     return cmd;
 }

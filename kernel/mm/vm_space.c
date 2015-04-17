@@ -11,7 +11,7 @@ void vm_space_init(struct vm_space *vms, struct page_directory * pd) {
 }
 
 struct vm_space * vm_space_clone(struct vm_space * parent) {
-    struct vm_space * child = (struct vm_space *)malloc(sizeof(struct vm_space));
+    struct vm_space * child = (struct vm_space *)kmalloc(sizeof(struct vm_space));
 
     if(!child) {
         return 0;
@@ -19,7 +19,7 @@ struct vm_space * vm_space_clone(struct vm_space * parent) {
     
     child->page_directory = paging_pd_clone(parent->page_directory);
     if(!child->page_directory) {
-        free(child);
+        kfree(child);
         return 0;
     }
 

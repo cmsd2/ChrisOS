@@ -40,7 +40,7 @@ bool cmdline_parse(const char * cmdline) {
                 state = search_option_start;
                 name = strndup(cmdline + option_start, i - option_start);
                 cmdline_option_add(name, values);
-                free(name);
+                kfree(name);
                 name = 0;
             } else if(c == '=') {
                 state = search_value_start;
@@ -63,7 +63,7 @@ bool cmdline_parse(const char * cmdline) {
                 value_start = -1;
                 utarray_push_back(values, &value);
                 cmdline_option_add(name, values);
-                free(name);
+                kfree(name);
                 name = 0;
                 utarray_clear(values);
             } else if(c == ',') {
@@ -89,7 +89,7 @@ bool cmdline_parse(const char * cmdline) {
             utarray_push_back(values, &value);
         }
         cmdline_option_add(name, values);
-        free(name);
+        kfree(name);
     }
 
     utarray_free(values);
@@ -98,10 +98,10 @@ bool cmdline_parse(const char * cmdline) {
 bool cmdline_option_add(const char * name, UT_array * values) {
     assert(name != 0);
 
-    struct cmdline_option * option = malloc(sizeof(struct cmdline_option));
+    struct cmdline_option * option = kmalloc(sizeof(struct cmdline_option));
     option->name = strdup(name);
     option->value_count = utarray_len(values);
-    option->values = malloc(sizeof(char*) * option->value_count);
+    option->values = kmalloc(sizeof(char*) * option->value_count);
     for(size_t i = 0; i < option->value_count; i++) {
         option->values[i] = strdup(*(char**)utarray_eltptr(values, i));
     }

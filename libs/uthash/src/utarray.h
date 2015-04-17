@@ -69,25 +69,25 @@ typedef struct {
         (a)->icd.dtor(utarray_eltptr(a,_ut_i));                               \
       }                                                                       \
     }                                                                         \
-    free((a)->d);                                                             \
+    kfree((a)->d);                                                             \
   }                                                                           \
   (a)->n=0;                                                                   \
 } while(0)
 
 #define utarray_new(a,_icd) do {                                              \
-  a=(UT_array*)malloc(sizeof(UT_array));                                      \
+  a=(UT_array*)kmalloc(sizeof(UT_array));                                      \
   utarray_init(a,_icd);                                                       \
 } while(0)
 
 #define utarray_free(a) do {                                                  \
   utarray_done(a);                                                            \
-  free(a);                                                                    \
+  kfree(a);                                                                    \
 } while(0)
 
 #define utarray_reserve(a,by) do {                                            \
   if (((a)->i+by) > ((a)->n)) {                                               \
     while(((a)->i+by) > ((a)->n)) { (a)->n = ((a)->n ? (2*(a)->n) : 8); }     \
-    if ( ((a)->d=(char*)realloc((a)->d, (a)->n*(a)->icd.sz)) == NULL) oom();  \
+    if ( ((a)->d=(char*)krealloc((a)->d, (a)->n*(a)->icd.sz)) == NULL) oom();  \
   }                                                                           \
 } while(0)
 
@@ -222,7 +222,7 @@ static void utarray_str_cpy(void *dst, const void *src) {
 }
 static void utarray_str_dtor(void *elt) {
   char **eltc = (char**)elt;
-  if (*eltc) free(*eltc);
+  if (*eltc) kfree(*eltc);
 }
 static const UT_icd ut_str_icd _UNUSED_ = {sizeof(char*),NULL,utarray_str_cpy,utarray_str_dtor};
 static const UT_icd ut_int_icd _UNUSED_ = {sizeof(int),NULL,NULL,NULL};

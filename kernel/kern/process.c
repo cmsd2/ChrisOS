@@ -22,7 +22,7 @@ struct process * current_process(void)
 
 struct process * process_alloc(void) {
     struct process * p;
-    p = (struct process *)malloc(sizeof(struct process));
+    p = (struct process *)kmalloc(sizeof(struct process));
     if(p) {
         memset(p, 0, sizeof(struct process));
     }
@@ -30,7 +30,7 @@ struct process * process_alloc(void) {
 }
 
 void process_free(struct process *p) {
-    free(p);
+    kfree(p);
 }
 
 void process_system_init(void) {
