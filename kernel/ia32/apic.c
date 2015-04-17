@@ -41,7 +41,7 @@ void apic_init(const struct cpuid_info * cpu) {
 
     size_t size = align_padding((uintptr_t)low, 0x400000);
 
-    paging_identity_map(_kernel_page_dir, (uintptr_t) low, size, I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_NOT_CACHEABLE);
+    paging_identity_map(paging_pd_current(), (uintptr_t) low, size, I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_NOT_CACHEABLE);
 
     // i32 10.6.2.2:
     // flat model IPI desination 31:28 set 0xf, 28:0 reserved (all '1')
@@ -299,7 +299,7 @@ void apic_configure_ioapic(uint8_t id, uint32_t phys_address, uint32_t global_ir
     i->irq_base = global_irq_base;
     ioapic_add(i);
 
-    paging_identity_map(_kernel_page_dir, i->phys_address, PAGE_SIZE, I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_NOT_CACHEABLE);
+    paging_identity_map(paging_pd_current(), i->phys_address, PAGE_SIZE, I86_PTE_PRESENT | I86_PTE_WRITABLE | I86_PTE_NOT_CACHEABLE);
 
     i->address = i->phys_address;
 

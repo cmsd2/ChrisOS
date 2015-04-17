@@ -111,7 +111,7 @@ bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm
         return false;
     }
 
-    paging_map(_kernel_page_dir, p_addr, size, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
+    paging_map(paging_pd_current(), p_addr, size, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
 
     if(flush) {
         paging_flush();
@@ -125,7 +125,7 @@ bool kmem_pages_map(pm_ptr_t p_addr, size_t num_pages, bool flush, vm_ptr_t * vm
 bool kmem_pages_unmap(vm_ptr_t vm_addr, bool flush) {
     size_t size;
     if(kmem_vm_get_size(vm_addr, &size)) {
-        paging_unmap(_kernel_page_dir, vm_addr, size);
+	paging_unmap(paging_pd_current(), vm_addr, size);
         kmem_vm_free(vm_addr);
         kprintf("unmapped pages at vm_addr=0x%lx size=0x%lx\n", vm_addr, size);
         return true;
@@ -139,7 +139,7 @@ bool kmem_page_alloc(enum alloc_region_flags flags, vm_ptr_t vm_addr, bool flush
     pm_ptr_t p_addr;
     if(p_addr = kmem_frame_alloc()) {
         //todo: this shouldn't be here
-        paging_map(_kernel_page_dir, p_addr, KMEM_PAGE_SIZE, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
+        paging_map(paging_pd_current(), p_addr, KMEM_PAGE_SIZE, vm_addr, I86_PDE_PRESENT | I86_PDE_WRITABLE | I86_PDE_USER);
         if(flush) {
             paging_flush();
         }
@@ -195,7 +195,7 @@ void kmem_page_free(vm_ptr_t vm_addr, enum alloc_region_flags flags, bool flush)
     //allocator_mem_free(&_kern_pm_alloc_map, vm_addr, KMEM_PAGE_SIZE, flags);
 
     //todo: too low level
-    paging_unmap(_kernel_page_dir, vm_addr, KMEM_PAGE_SIZE);
+    paging_unmap(paging_pd_current(), vm_addr, KMEM_PAGE_SIZE);
 
     if(flush) {
 	// todo: just invalidate modified page(s)
