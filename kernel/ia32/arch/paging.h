@@ -66,6 +66,12 @@ extern struct page_directory * _kernel_page_dir;
 void paging_set_attr(uint32_t * e, uint32_t attr);
 void paging_clear_attr(uint32_t * e, uint32_t attr);
 
+struct page_directory * paging_pd_current();
+
+struct page_directory * paging_pd_alloc();
+void paging_pd_free(struct page_directory * pd);
+void paging_pd_init(struct page_directory * pd);
+struct page_directory * paging_pd_clone(struct page_directory * pd);
 void paging_pd_entry_invl(pd_entry *e);
 void paging_pd_entry_zero(pd_entry *e);
 void paging_pd_entry_present(pd_entry *e);
