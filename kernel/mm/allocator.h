@@ -36,6 +36,8 @@ struct allocator_map {
 
 void allocator_map_init(struct allocator_map * map);
 
+void allocator_map_init_copy(struct allocator_map *dest, struct allocator_map *src);
+
 // add a new region
 void allocator_region_add_new(struct allocator_map * map, uintptr_t address, size_t size, enum alloc_region_flags flags);
 

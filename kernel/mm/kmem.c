@@ -12,7 +12,7 @@ struct allocator_map _kern_pm_alloc_map; // available physical mem
 struct kmem_page * _page_struct_free_list;
 
 void kmem_init(void) {
-    vm_space_init(&_kern_vm_space);
+    vm_space_init(&_kern_vm_space, paging_pd_current());
     allocator_map_init(&_kern_pm_alloc_map);
 }
 

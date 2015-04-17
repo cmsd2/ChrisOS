@@ -29,6 +29,8 @@ struct vm_map {
 
 void vm_map_init(struct vm_map *map);
 
+void vm_map_init_copy(struct vm_map *dest, struct vm_map *src);
+
 //doesn't initialise any fields
 struct vm_map_region * vm_map_region_alloc();
 

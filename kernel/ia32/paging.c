@@ -1,6 +1,7 @@
 #include <sys/param.h>
 #include <arch/paging.h>
 #include <mm/layout.h>
+#include <mm/malloc.h>
 #include <utils/panic.h>
 #include <utils/mem.h>
 #include <utils/kprintf.h>
@@ -9,6 +10,11 @@
 #include <assert.h>
 
 struct page_directory * _kernel_page_dir;
+struct page_directory * _current_page_dir;
+
+struct page_directory * paging_pd_current() {
+    return _current_page_dir;
+}
 
 void paging_set_attr(uint32_t * e, uint32_t attr) {
 	*e |= attr;
@@ -16,6 +22,14 @@ void paging_set_attr(uint32_t * e, uint32_t attr) {
 
 void paging_clear_attr(uint32_t * e, uint32_t attr) {
 	*e &= ~attr;
+}
+
+struct page_directory * paging_pd_alloc() {
+    return malloc(sizeof(struct page_directory));
+}
+
+void paging_pd_free(struct page_directory * pd) {
+    free(pd);
 }
 
 void paging_pd_entry_invl(pd_entry *e) {
@@ -81,6 +95,8 @@ void paging_cleanup_bootstrap(void) {
 }
 
 void paging_load_page_dir(struct page_directory * pd) {
+    _current_page_dir = pd;
+    
 	__asm__ volatile (
 		"mov %0, %%eax\n"
 		"mov %%eax, %%cr3\n"
@@ -155,11 +171,13 @@ void paging_map_kernel(struct page_directory * ptd) {
 }
 
 void paging_init_kernel_page_dir(void) {
-	int i;
-
 	_kernel_page_dir = (struct page_directory*) kalloc_static(sizeof(struct page_directory), PAGE_SIZE);
 
-	for(i = 0; i < PDT_ENTRIES; i++) {
+    paging_pd_init(_kernel_page_dir);
+}
+
+void paging_pd_init(struct page_directory * pd) {
+    for(int i = 0; i < PDT_ENTRIES; i++) {
 		paging_pd_entry_zero(&_kernel_page_dir->entries[i]);
 	}
 }
