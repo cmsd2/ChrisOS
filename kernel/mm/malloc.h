@@ -6,6 +6,10 @@
 
 #include <mm/allocator.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void kmalloc_init(void);
 
 void kmalloc_print_info(void);
@@ -25,5 +29,9 @@ struct kmalloc_block {
     size_t data_size; // requested size of data in bytes
     uint8_t data[]; // actual area of memory starts here
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -4,10 +4,17 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void putchar(int c, void *arg);
 void kprintf(const char *fmt, ...);
 char * ksprintn(char *nbuf, uintmax_t num, int base, int *lenp, int upper);
 int kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_list ap);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

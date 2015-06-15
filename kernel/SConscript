@@ -12,16 +12,19 @@ else:
 symbol_file_builder = Builder(action = '$OBJCOPY --only-keep-debug $SOURCE $TARGET')
 stripped_elf_builder = Builder(action = '$OBJCOPY --strip-debug $SOURCE $TARGET')
 
+gcc_flags = env['GCC_FLAGS'] + \
+    acpi_debug_flag + \
+    debug_flag + \
+    ' -nostdlib -ffreestanding -Werror -D_KERNEL' + \
+    ' -I$PROJECT_ROOT/kernel/$ARCH' + \
+    ' -I$PROJECT_ROOT/kernel' + \
+    ' -I$PROJECT_ROOT/include' + \
+    ' -I$PROJECT_ROOT/libs/uthash/src' + \
+    ' -I$PROJECT_ROOT/libs/acpica/source/include'
 env = env.Clone(
-    CFLAGS = env['CFLAGS'] + 
-    acpi_debug_flag +
-    debug_flag +
-    ' -nostdlib -ffreestanding -Werror -D_KERNEL' +
-    ' -I$PROJECT_ROOT/kernel/$ARCH' +
-    ' -I$PROJECT_ROOT/kernel' +
-    ' -I$PROJECT_ROOT/include' +
-    ' -I$PROJECT_ROOT/libs/uthash/src' +
-    ' -I$PROJECT_ROOT/libs/acpica/source/include',
+    GCC_FLAGS = gcc_flags,
+    CFLAGS = gcc_flags + " " + env['CFLAGS'],
+    CXXFLAGS = gcc_flags + " " + env['CXXFLAGS'],
     LINKFLAGS = env['LINKFLAGS'] + ' -nostdlib -ffreestanding')
 env.Append(BUILDERS = {'SymbolFile':symbol_file_builder, 'StrippedElf':stripped_elf_builder})
 

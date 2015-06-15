@@ -44,6 +44,10 @@
 #include <arch/types.h>
 #include <arch/endian.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 #ifndef _SSIZE_T_DECLARED
 #define _SSIZE_T_DECLARED
 typedef __ssize_t ssize_t;
@@ -65,5 +69,9 @@ typedef long long quad_t;
 #ifdef _KERNEL
 
 #endif /* !_KERNEL */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* !_SYS_TYPES_H_ */

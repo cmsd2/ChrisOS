@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 #define MAX_VA ((uintptr_t)-1)
 
 typedef uintptr_t mm_ptr_t;
@@ -15,5 +19,9 @@ typedef size_t vm_size_t;
 // will change if using PAE
 typedef uintptr_t pm_ptr_t;
 typedef size_t pm_size_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

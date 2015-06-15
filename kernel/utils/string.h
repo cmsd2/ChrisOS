@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <utils/mem.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 size_t strlen(const char *str);
 int strncmp(const char * a, const char * b, size_t n);
 int strcmp(const char * a, const char * b);
@@ -18,5 +22,9 @@ char * strncat(char * dst, const char * src, size_t n);
 extern const char * true_str;
 extern const char * false_str;
 #define BOOL_TO_STR(b) (b == true ? true_str : false_str)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

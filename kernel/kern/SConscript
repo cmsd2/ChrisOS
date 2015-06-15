@@ -1,5 +1,5 @@
 Import('env')
 
-kern_lib = env.Library('kern', Glob('*.c'))
+kern_lib = env.Library('kern', Glob('*.c') + Glob('*.cc'))
 
 Return('kern_lib')

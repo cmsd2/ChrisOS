@@ -23,6 +23,10 @@ todo: add pre_merge (and pre_split?) to allow testing if merging/splitting is al
 #include <sys/standard.h>
 #include <assert.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 // exclusive end point functions
 #define END_POINT_LT_END_POINT(p_start, p_size, r_start, r_size) ((p_size) <= ((r_size) - ((p_start) - (r_start))))
 #define END_POINT_GT_START_POINT(p_start, p_size, r_start, r_size) (((p_start) >= (r_start)) || ((p_size) >= ((r_start) - (p_start))))
@@ -317,5 +321,9 @@ MR_CUT_IMPL(name, region_type) \
 MR_CUT_AND_STITCH_IMPL(name, map_type, region_type) \
 MRL_FIND_ADDRESS_IMPL(name, map_type, region_type, address_type) \
 MRL_SUBTRACT_IMPL(name, map_type, region_type)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

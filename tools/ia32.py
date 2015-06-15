@@ -13,6 +13,7 @@ def generate(env, **kwargs):
     else:
         raise Exception("unsupported arch")
     env['CC'] = sysroot + target + 'gcc'
+    env['CXX'] = sysroot + target + 'g++'
     env['AR'] = sysroot + target + 'ar'
     env['OBJCOPY'] = sysroot + target + 'objcopy'
     env['RANLIB'] = sysroot + target + 'ranlib'

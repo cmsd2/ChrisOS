@@ -48,6 +48,10 @@
 #include <sys/limits.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 #define	NBBY	8		/* number of bits in a byte */
 #define	NBPW	sizeof(int)	/* number of bytes per word (integer) */
 
@@ -121,5 +125,9 @@ __END_DECLS
 #endif /* !_BYTEORDER_FUNC_DEFINED */
 #endif /* lint */
 #endif /* _KERNEL */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* _SYS_PARAM_H_ */

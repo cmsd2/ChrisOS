@@ -11,6 +11,10 @@ consisting of a list of non-overlapping regions of available areas.
 #include <mm/range.h>
 #include <mm/mm_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 enum alloc_region_flags {
     ALLOC_VM_USER = 1,
     ALLOC_VM_KERNEL = 2,
@@ -65,5 +69,9 @@ void allocator_region_free(struct allocator_region * region);
 bool allocator_region_pre_merge(struct allocator_region * a, struct allocator_region * b);
 void allocator_region_post_merge(struct allocator_region * a, struct allocator_region * b);
 void allocator_region_post_split(struct allocator_region * a, struct allocator_region * b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

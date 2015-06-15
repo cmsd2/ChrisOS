@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 enum human_memory_units {
 	BYTES,
 	KILOBYTES,
@@ -43,5 +47,9 @@ void * memmove(void * dest, const void * src, size_t len);
 
 void kmemcpy_b_fwd(uint8_t * dest, const uint8_t * src, size_t len);
 void kmemcpy_b_rev(uint8_t * dest, const uint8_t * src, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

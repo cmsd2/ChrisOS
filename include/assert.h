@@ -5,6 +5,10 @@
   #include <utils/panic.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 #define S(x) #x
 #define S_(x) S(x)
 #define S__LINE__ S_(__LINE__)
@@ -21,6 +25,10 @@
   #else
     #define assert(expr) __assert(__func__, __FILE__, __LINE__, expr)
   #endif
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
