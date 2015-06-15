@@ -5,10 +5,12 @@
 #include <utils/kprintf.h>
 #include <arch/interrupts.h>
 #include <sys/spinlock.h>
+#include <arch/ticks.h>
 
 struct thread * _runnable_threads;
 struct thread * _blocked_threads;
 struct spinlock _sched_lock;
+uint32_t _last_scheduled_time_ticks;
 
 void scheduler_init() {
     spinlock_init(&_sched_lock);
@@ -38,7 +40,9 @@ void scheduler_yield() {
 
     scheduler_unlock(flags2);
 
-    if(new_thread) {
+    if(!new_thread) {
+        panic("no thread to switch to");
+    } else if(new_thread != current_thread()) {
         process_context_switch(new_thread);
     } else {
         //
@@ -84,11 +88,20 @@ void scheduler_block() {
 struct thread * scheduler_next_thread() {
     struct thread * old_thread = current_thread();
 
+    uint32_t previous_ticks = _last_scheduled_time_ticks;
+    uint32_t current_ticks = _last_scheduled_time_ticks = ticks_since_boot();
+    uint32_t elapsed_ticks = current_ticks - previous_ticks;
+
     if(old_thread) {
         // should always be non null except for initial bootstrap
+        old_thread->time_slice -= elapsed_ticks;
 
         if(old_thread->state == thread_running) {
-            old_thread->state = thread_runnable;
+            if(old_thread->time_slice > 0) {
+                return old_thread;
+            } else {
+                old_thread->state = thread_runnable;
+            }
         }
     }
 
@@ -99,7 +112,7 @@ struct thread * scheduler_next_thread() {
         panic("no next thread available");
     }
 
-    /*if(old_thread != next_thread) {
+    /*    if(old_thread != next_thread) {
         kprintf("switching from %s to %s\n", old_thread ? old_thread->name : "", next_thread->name);
         }*/
 
@@ -114,6 +127,8 @@ struct thread * scheduler_next_thread() {
 
 void scheduler_make_runnable(struct thread * t) {
     uint32_t flags = scheduler_lock();
+
+    //kprintf("making thread runnable %s\n", t->name ? t->name : "");
 
     if(t->state != thread_runnable) {
         scheduler_remove_thread(t);
@@ -170,6 +185,7 @@ void scheduler_remove_thread(struct thread * t) {
 
 void scheduler_add_runnable_thread(struct thread * t) {
     assert(t != _runnable_threads);
+    t->time_slice = TIME_SLICE;
     DL_APPEND2(_runnable_threads, t, scheduler_thread_prev, scheduler_thread_next);
 }
 

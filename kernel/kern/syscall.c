@@ -7,10 +7,22 @@
 #include <arch/power.h>
 #include <arch/interrupts.h>
 #include <utils/kprintf.h>
+#include <drivers/tty.h>
+
+long high_five(long a, long b, long c, long d, long e);
 
 static void * syscall_handlers[] = {
     power_halt, // 0
+    high_five, // 1
+    tty_getc, // 2
+    tty_putc, // 3
+    tty_gets, // 4
+    tty_puts // 5
 };
+
+long high_five(long a, long b, long c, long d, long e) {
+    return a + b + c + d + e;
+}
 
 void syscalls_init() {
     interrupts_install_handler(0x80, syscalls_handler, 0);
@@ -31,7 +43,7 @@ bool syscalls_handler(uint32_t int_no, struct registers * regs, void * data) {
 }
 
 void syscalls_call(uint32_t num, struct registers * regs) {
-    kprintf("calling syscall %d\n", num);
+    //kprintf("calling syscall %d\n", num);
     void * handler = syscall_handlers[num];
 
     uint32_t ret;
@@ -56,3 +68,8 @@ void syscalls_call(uint32_t num, struct registers * regs) {
 }
 
 DEFN_SYSCALL_0(halt, 0);
+DEFN_SYSCALL_5(high_five, 1, long, long, long, long, long);
+DEFN_SYSCALL_0(tty_getc, 2);
+DEFN_SYSCALL_1(tty_putc, 3, char);
+DEFN_SYSCALL_2(tty_gets, 4, char *, size_t);
+DEFN_SYSCALL_1(tty_puts, 5, const char *);

@@ -58,6 +58,8 @@ struct thread {
     enum thread_state state;
 
     int exit_code;
+
+    uint32_t time_slice;
 };
 
 struct thread * current_thread(void);

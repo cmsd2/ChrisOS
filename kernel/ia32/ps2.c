@@ -327,8 +327,10 @@ int ps2_kbd_thread(void * data __unused) {
                 //kprintf("received keyboard data 0x%hhx\n", scancode[0]);
                 scancode_i = 1;
                 if(ps2_kbd_scancode_complete(scancode, scancode_i)) {
+                    //kprintf("got complete scancode\n");
                     ps2_kbd_handle_scancode(scancode, scancode_i);
                 } else {
+                    //kprintf("waitinf for more scancode data\n");
                     state = waiting_scancode_end;
                 }
                 done = !ps2_can_read_data();
@@ -351,7 +353,10 @@ int ps2_kbd_thread(void * data __unused) {
         hal_unmask_irq(_kbd_irq);
         // if kbd irq arrives here, we're ok,
         // we just immediately get made runnable and rescheduled
+
+        //kprintf("ps2_kbd yielding\n");
         scheduler_yield();
+        //kprintf("ps2_kbd woken up\n");
     }
 }
 

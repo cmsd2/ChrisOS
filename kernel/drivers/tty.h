@@ -49,7 +49,7 @@ void tty_init(void);
  */
 
 // sends a string to the display.
-int tty_puts(const char * data, size_t length);
+int tty_puts(const char * data);
 
 // writes a character to the display.
 int tty_putc(char c);

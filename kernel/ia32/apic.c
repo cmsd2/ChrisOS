@@ -79,6 +79,10 @@ uint8_t apic_interrupt_for_irq(uint8_t irq) {
     return irq + APIC_IRQ_BASE;
 }
 
+uint8_t apic_irq_for_interrupt(uint8_t int_no) {
+    return int_no - APIC_IRQ_BASE;
+}
+
 void apic_timer_init() {
     uint32_t freqs[3];
     for(int i = 0; i < 3; i++) {

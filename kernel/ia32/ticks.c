@@ -37,9 +37,9 @@ enum hal_fast_irq_handler_result
 ticks_irq_handler(uint32_t int_no, struct registers * regs, void * data) {
     _ticks_since_boot++;
 
-    if(_ticks_since_boot % 320)
+    if(_ticks_since_boot % 50)
         return IRQ_HANDLED;
-    kprintf("tick!\n");
+    //kprintf("tick!\n");
 
     struct timeval now;
     get_time_utc(&now);

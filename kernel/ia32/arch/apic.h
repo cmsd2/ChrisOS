@@ -263,6 +263,7 @@ void apic_sivr_enable();
 void apic_sivr_disable();
 void apic_remap_irqs(void);
 uint8_t apic_interrupt_for_irq(uint8_t irq);
+uint8_t apic_irq_for_interrupt(uint8_t int_no);
 const struct apic_base_msr * apic_get_base_msr();
 void apic_lvt_write(unsigned int reg, apic_lvt_t lvt);
 void apic_lvt_read(unsigned int reg, apic_lvt_t * lvt);

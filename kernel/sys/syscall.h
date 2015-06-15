@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <arch/registers.h>
+#include <sys/param.h>
 
 /*
  * from james molloy's syscall impl
@@ -41,8 +42,8 @@ long syscall_ ## NAME (P1 p1, P2 p2)	  \
   long result; \
   __asm__ volatile("int $0x80": "=a"(result) \
 		   : "0" (NUM), \
-                     "b" ((long)p1) \
-                     "c" ((long)p2) \
+             "b" ((long)p1),        \
+             "c" ((long)p2)        \
   );	\
   return result; \
 }
@@ -53,9 +54,9 @@ long syscall_ ## NAME (P1 p1, P2 p2)	  \
   long result; \
   __asm__ volatile("int $0x80": "=a"(result) \
 		   : "0" (NUM), \
-                     "b" ((long)p1) \
-                     "c" ((long)p2) \
-                     "d" ((long)p3) \
+             "b" ((long)p1),        \
+             "c" ((long)p2),        \
+             "d" ((long)p3)        \
   ); \
   return result; \
 }
@@ -65,10 +66,10 @@ long syscall_ ## NAME (P1 p1, P2 p2)	  \
   long result; \
   __asm__ volatile("int $0x80": "=a"(result) \
 		   : "0" (NUM), \
-                     "b" ((long)p1) \
-                     "c" ((long)p2) \
-                     "d" ((long)p3) \
-                     "S" ((long)p4) \
+             "b" ((long)p1),        \
+             "c" ((long)p2),        \
+             "d" ((long)p3),        \
+             "S" ((long)p4)        \
   ); \
   return result; \
 }
@@ -79,16 +80,21 @@ long syscall_ ## NAME (P1 p1, P2 p2)	  \
   long result; \
   __asm__ volatile("int $0x80": "=a"(result) \
 		   : "0" (NUM), \
-                     "b" ((long)p1) \
-                     "c" ((long)p2) \
-                     "d" ((long)p3) \
-                     "S" ((long)p4) \
-                     "D" ((long)p5) \
+             "b" ((long)p1),        \
+             "c" ((long)p2),        \
+             "d" ((long)p3),        \
+             "S" ((long)p4),        \
+             "D" ((long)p5)        \
   ); \
   return result; \
 }
 
 DECL_SYSCALL_0(halt);
+DECL_SYSCALL_5(high_five, long, long, long, long, long);
+DECL_SYSCALL_0(tty_getc);
+DECL_SYSCALL_1(tty_putc, char);
+DECL_SYSCALL_2(tty_gets, char *, size_t);
+DECL_SYSCALL_1(tty_puts, const char *);
 
 void syscalls_init(void);
 bool syscalls_handler(uint32_t int_no, struct registers * regs, void * data);

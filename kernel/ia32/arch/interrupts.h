@@ -9,9 +9,6 @@
 #include <stdbool.h>
 #include <arch/registers.h>
 
-//TODO: is this a good idea?
-#define REENTRANT_INTERRUPTS
-
 #define MAX_INTERRUPTS 256
 
 #define interrupts_disable() __asm__("cli")

@@ -130,7 +130,7 @@ void interrupts_irq_handler(struct registers regs)
 
 void interrupts_ioapic_irq_handler(struct registers regs)
 {
-    int irq = pic_irq_for_interrupt(regs.int_no);
+    int irq = apic_irq_for_interrupt(regs.int_no);
     apic_eoi(irq);
 
     interrupts_handler(&regs);
@@ -140,11 +140,14 @@ void interrupts_handler(struct registers * regs)
 {
     //interrupts should be disabled by cpu already
 
-    interrupts_cpu_enter();
+    // allow syscalls to nest arbitrarily
+    if(regs->int_no != 0x80) {
+        interrupts_cpu_enter();
+    }
 
     if(current_thread() && current_thread()->name[0] == 'u') {
         // interrupt in user mode app!
-        kprintf("interrupted user mode app\n");
+        //kprintf("interrupted user mode app\n");
     }
 
     if(regs->eip < KERNEL_VMA) {
@@ -152,9 +155,7 @@ void interrupts_handler(struct registers * regs)
         panic("error: came from weird address 0x%lx\n");
     }
 
-#ifdef REENTRANT_INTERRUPTS
     interrupts_enable();
-#endif
 
     bool handled = interrupts_dispatch(regs->int_no, regs);
 
@@ -181,16 +182,18 @@ void interrupts_handler(struct registers * regs)
         }
     }
 
-#ifdef REENTRANT_INTERRUPTS
     interrupts_disable();
-#endif
 
-    interrupts_cpu_leave();
+    if(regs->int_no != 0x80) {
+        interrupts_cpu_leave();
+    }
 
     if(!interrupts_cpu_in_nested_isr()) {
         interrupts_enable();
 
         scheduler_yield();
+    } else {
+        //registers_dump(regs);
     }
 
     if(regs->eip < KERNEL_VMA) {

@@ -28,8 +28,8 @@ void tty_line_free(struct tty_line * line) {
     kfree(line);
 }
 
-int tty_puts(const char * data, size_t length) {
-    for(size_t i = 0; i < length; i++) {
+int tty_puts(const char * data) {
+    for(size_t i = 0; data[i]; i++) {
         if(tty_putc(data[i]) != 0) {
             return -1;
         }
@@ -39,6 +39,7 @@ int tty_puts(const char * data, size_t length) {
 }
 
 int tty_gets(char * buffer, size_t maxlength) {
+    //kprintf("trying to read %ld bytes from tty\n", maxlength);
     struct tty_line * line = _tty.lines;
 
     char c = 0;
@@ -106,6 +107,7 @@ int tty_line_newline() {
 }
 
 int tty_line_append_char(char c) {
+    //kprintf("tty char: 0x%hhx\n", c);
     struct tty_line * line = _tty.lines;
 
     if(c == 0x08) {
@@ -171,6 +173,7 @@ void tty_observer_delete(struct tty_observer * o) {
 }
 
 int tty_wait_chars_available() {
+    //kprintf("waiting for chars from tty\n");
     size_t available;
     struct tty_observer * observer;
 
@@ -196,6 +199,7 @@ int tty_wait_chars_available() {
 }
 
 int tty_notify_chars_available() {
+    //kprintf("notifying tty chars available\n");
     struct tty_observer * elt;
     LL_FOREACH(_tty.observers, elt) {
         scheduler_make_runnable(elt->thread);

@@ -43,11 +43,20 @@ char uma_stack[4096];
 struct mutex m;
 
 int user_mode_app(void * data) {
+    char line[81];
+    char * msg;
+    int len;
     kprintf("hello from user mode app main. in ring 0, about to switch to ring 3.");
     tss_switch_to_user_mode();
-    syscall_halt();
     while(1) {
-
+        syscall_tty_puts("getting line\n");
+        
+        len = syscall_tty_gets(line, sizeof(line));
+        line[len] = 0;
+        
+        syscall_tty_puts("got line\n");
+        
+        syscall_tty_puts(line);
     }
 }
 
@@ -180,7 +189,7 @@ void kmain()
 
     kprintf("Hello, kernel world!\n");
 
-    thread_spawn_kthread(kapp, "kapp", NULL);
+    //thread_spawn_kthread(kapp, "kapp", NULL);
 
     acpi_madt_print_subtables();
 

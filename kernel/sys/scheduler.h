@@ -3,6 +3,8 @@
 
 #include <sys/thread.h>
 
+#define TIME_SLICE 1
+
 void scheduler_init(void);
 
 // select a runnable thread and switch to it
